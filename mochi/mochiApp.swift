@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 
 @main
-struct CozyPetHabitsApp: App {
+struct MochiApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Habit.self,

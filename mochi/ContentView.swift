@@ -38,7 +38,7 @@ struct ContentView: View {
                         }
                 }
             } else {
-                ProgressView("Preparing CozyPet Habits...")
+                ProgressView("Preparing mochi...")
             }
         }
         .environmentObject(reactionController)
