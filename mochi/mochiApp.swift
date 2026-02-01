@@ -1,18 +1,14 @@
-//
-//  mochiApp.swift
-//  mochi
-//
-//  Created by Noah Lin  on 2026-02-01.
-//
-
 import SwiftUI
 import SwiftData
 
 @main
-struct mochiApp: App {
+struct CozyPetHabitsApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            Habit.self,
+            Pet.self,
+            InventoryItem.self,
+            AppState.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 

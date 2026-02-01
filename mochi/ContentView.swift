@@ -1,61 +1,59 @@
-//
-//  ContentView.swift
-//  mochi
-//
-//  Created by Noah Lin  on 2026-02-01.
-//
-
 import SwiftUI
 import SwiftData
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
+    @Environment(\.scenePhase) private var scenePhase
+
+    @Query(sort: \Pet.createdAt) private var pets: [Pet]
+    @Query(sort: \AppState.createdAt) private var appStates: [AppState]
+    @Query(sort: \Habit.createdAt) private var habits: [Habit]
+
+    @StateObject private var reactionController = PetReactionController()
+
+    private let engine = GameEngine()
 
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
-                    }
-                }
-                .onDelete(perform: deleteItems)
-            }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                }
-            }
-        } detail: {
-            Text("Select an item")
-        }
-    }
+        Group {
+            if let pet = pets.first, let appState = appStates.first {
+                TabView {
+                    HomeView(pet: pet, appState: appState)
+                        .tabItem {
+                            Label("Home", systemImage: "house")
+                        }
 
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
+                    HabitsView(pet: pet, appState: appState)
+                        .tabItem {
+                            Label("Habits", systemImage: "checklist")
+                        }
 
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
+                    StoreView(pet: pet)
+                        .tabItem {
+                            Label("Store", systemImage: "cart")
+                        }
+
+                    SettingsView(pet: pet, appState: appState)
+                        .tabItem {
+                            Label("Settings", systemImage: "gearshape")
+                        }
+                }
+            } else {
+                ProgressView("Preparing CozyPet Habits...")
             }
+        }
+        .environmentObject(reactionController)
+        .task {
+            SeedDataService.seedIfNeeded(context: modelContext)
+            engine.runResetsIfNeeded(context: modelContext)
+        }
+        .onChange(of: scenePhase) { phase in
+            guard phase == .active else { return }
+            engine.runResetsIfNeeded(context: modelContext)
         }
     }
 }
 
 #Preview {
     ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
+        .modelContainer(for: [Habit.self, Pet.self, InventoryItem.self, AppState.self], inMemory: true)
 }
