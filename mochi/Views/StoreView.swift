@@ -25,14 +25,24 @@ struct StoreView: View {
                             )
                         }
                     }
-                    .padding(.horizontal)
-                    .padding(.bottom, 16)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 24)
                 }
             }
+            .background(Color.appBackground)
             .navigationTitle("Store")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Label("\(pet.coins)", systemImage: "bitcoinsign.circle")
+                    HStack(spacing: 6) {
+                        Image(systemName: "circle.fill")
+                            .foregroundStyle(AppColors.accentPeach)
+                        Text("\(pet.coins)")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(AppColors.coinPill)
+                    .clipShape(Capsule())
                 }
             }
         }
@@ -45,7 +55,7 @@ struct StoreView: View {
             }
         }
         .pickerStyle(.segmented)
-        .padding(.horizontal)
+        .padding(.horizontal, 20)
     }
 
     private var filteredItems: [InventoryItem] {
@@ -80,9 +90,9 @@ private struct InventoryItemCard: View {
         HStack(spacing: 16) {
             Image(systemName: item.assetName)
                 .font(.title2)
-                .frame(width: 44, height: 44)
-                .background(.thinMaterial)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .frame(width: 48, height: 48)
+                .background(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(item.name)
@@ -98,18 +108,27 @@ private struct InventoryItemCard: View {
                 Button(item.equipped ? "Equipped" : "Equip") {
                     onEquip()
                 }
-                .buttonStyle(.borderedProminent)
-                .disabled(item.equipped)
+                .buttonStyle(.plain)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(item.equipped ? AppColors.cardPurple : AppColors.cardGreen)
+                .clipShape(Capsule())
             } else {
                 Button("Buy") {
                     onBuy()
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.plain)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(coins >= item.price ? AppColors.cardYellow : .gray.opacity(0.2))
+                .clipShape(Capsule())
+                .foregroundStyle(AppColors.textPrimary)
                 .disabled(coins < item.price)
             }
         }
-        .padding(12)
-        .background(.thinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .padding(14)
+        .background(.white)
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 4)
     }
 }

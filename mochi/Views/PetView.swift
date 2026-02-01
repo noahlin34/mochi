@@ -9,13 +9,14 @@ struct PetView: View {
         ZStack {
             petBody
             petFace
+            petPaws
             if let outfitSymbol {
                 Image(systemName: outfitSymbol)
-                    .font(.title2)
+                    .font(.system(size: 20, weight: .semibold))
                     .foregroundStyle(.white)
-                    .padding(6)
-                    .background(Circle().fill(.black.opacity(0.25)))
-                    .offset(y: 24)
+                    .padding(8)
+                    .background(Circle().fill(.black.opacity(0.2)))
+                    .offset(y: 36)
             }
         }
         .frame(width: 160, height: 160)
@@ -27,9 +28,9 @@ struct PetView: View {
         ZStack {
             switch species {
             case .cat:
-                CatShape(color: .orange)
+                CatShape(color: .purple)
             case .dog:
-                DogShape(color: .brown)
+                DogShape(color: .orange)
             case .bunny:
                 BunnyShape(color: .pink)
             }
@@ -37,15 +38,32 @@ struct PetView: View {
     }
 
     private var petFace: some View {
+        HStack(spacing: 18) {
+            ZStack {
+                Circle().fill(.white)
+                Circle().fill(.black).frame(width: 8, height: 8)
+            }
+            .frame(width: 18, height: 18)
+
+            ZStack {
+                Circle().fill(.white)
+                Circle().fill(.black).frame(width: 8, height: 8)
+            }
+            .frame(width: 18, height: 18)
+        }
+        .offset(y: -10)
+    }
+
+    private var petPaws: some View {
         HStack(spacing: 16) {
             Circle()
-                .fill(.black)
-                .frame(width: 8, height: 8)
+                .fill(.white.opacity(0.5))
+                .frame(width: 20, height: 16)
             Circle()
-                .fill(.black)
-                .frame(width: 8, height: 8)
+                .fill(.white.opacity(0.5))
+                .frame(width: 20, height: 16)
         }
-        .offset(y: -6)
+        .offset(y: 38)
     }
 }
 
@@ -55,16 +73,30 @@ struct RoomBackgroundView: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(LinearGradient(colors: [.mint.opacity(0.4), .blue.opacity(0.2)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                .fill(Color.white.opacity(0.35))
+
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.white.opacity(0.45))
+                .frame(width: 120, height: 80)
+                .offset(x: 60, y: -20)
+
+            Circle()
+                .fill(Color.white.opacity(0.35))
+                .frame(width: 60, height: 60)
+                .offset(x: -90, y: 60)
+
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.white.opacity(0.25))
+                .frame(width: 70, height: 70)
+                .offset(x: 90, y: 80)
 
             if let assetName {
                 Image(systemName: assetName)
-                    .font(.system(size: 60))
+                    .font(.system(size: 54))
                     .foregroundStyle(.white.opacity(0.6))
                     .offset(y: 40)
             }
         }
-        .padding(16)
     }
 }
 
@@ -74,13 +106,13 @@ private struct CatShape: View {
     var body: some View {
         ZStack {
             Triangle()
-                .fill(color)
-                .frame(width: 34, height: 30)
-                .offset(x: -30, y: -54)
+                .fill(color.opacity(0.9))
+                .frame(width: 30, height: 26)
+                .offset(x: -30, y: -50)
             Triangle()
-                .fill(color)
-                .frame(width: 34, height: 30)
-                .offset(x: 30, y: -54)
+                .fill(color.opacity(0.9))
+                .frame(width: 30, height: 26)
+                .offset(x: 30, y: -50)
             Circle()
                 .fill(color)
                 .frame(width: 140, height: 140)
@@ -94,14 +126,14 @@ private struct DogShape: View {
     var body: some View {
         ZStack {
             Capsule()
-                .fill(color.opacity(0.9))
-                .frame(width: 26, height: 60)
+                .fill(color.opacity(0.85))
+                .frame(width: 30, height: 60)
                 .offset(x: -60, y: -20)
             Capsule()
-                .fill(color.opacity(0.9))
-                .frame(width: 26, height: 60)
+                .fill(color.opacity(0.85))
+                .frame(width: 30, height: 60)
                 .offset(x: 60, y: -20)
-            RoundedRectangle(cornerRadius: 45, style: .continuous)
+            RoundedRectangle(cornerRadius: 55, style: .continuous)
                 .fill(color)
                 .frame(width: 150, height: 130)
         }
@@ -113,28 +145,17 @@ private struct BunnyShape: View {
 
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(color)
-                .frame(width: 36, height: 90)
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(color.opacity(0.9))
+                .frame(width: 34, height: 90)
                 .offset(x: -30, y: -60)
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(color)
-                .frame(width: 36, height: 90)
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(color.opacity(0.9))
+                .frame(width: 34, height: 90)
                 .offset(x: 30, y: -60)
             Circle()
                 .fill(color)
                 .frame(width: 140, height: 140)
         }
-    }
-}
-
-private struct Triangle: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: rect.midX, y: rect.minY))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
-        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
-        path.closeSubpath()
-        return path
     }
 }

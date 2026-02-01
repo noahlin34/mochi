@@ -17,37 +17,34 @@ struct HabitsView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                Section {
-                    HStack {
-                        PetView(species: pet.species, outfitSymbol: nil, isBouncing: isBouncing)
-                            .scaleEffect(0.6)
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Care Actions")
-                                .font(.headline)
-                            Text("Complete habits to keep your pet happy.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                    }
-                    .padding(.vertical, 8)
-                }
+            ScrollView {
+                VStack(spacing: 16) {
+                    headerCard
 
-                if habits.isEmpty {
-                    ContentUnavailableView("No Habits Yet", systemImage: "sparkles", description: Text("Add your first habit to care for your pet."))
-                } else {
-                    ForEach(habits) { habit in
-                        HabitRow(habit: habit) {
-                            complete(habit)
-                        } onEdit: {
-                            habitToEdit = habit
-                            showingForm = true
+                    if habits.isEmpty {
+                        ContentUnavailableView("No Habits Yet", systemImage: "sparkles", description: Text("Add your first habit to care for your pet."))
+                    } else {
+                        LazyVStack(spacing: 12) {
+                            ForEach(habits) { habit in
+                                HabitListCard(
+                                    habit: habit,
+                                    onComplete: { complete(habit) },
+                                    onEdit: {
+                                        habitToEdit = habit
+                                        showingForm = true
+                                    },
+                                    onDelete: {
+                                        deleteHabit(habit)
+                                    }
+                                )
+                            }
                         }
                     }
-                    .onDelete(perform: deleteHabits)
                 }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 24)
             }
+            .background(Color.appBackground)
             .navigationTitle("Habits")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -68,16 +65,35 @@ struct HabitsView: View {
         }
     }
 
+    private var headerCard: some View {
+        HStack(spacing: 16) {
+            PetView(species: pet.species, outfitSymbol: nil, isBouncing: isBouncing)
+                .scaleEffect(0.55)
+                .frame(width: 90, height: 90)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Care Actions")
+                    .font(.headline)
+                Text("Complete habits to keep your pet happy.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+        }
+        .padding(14)
+        .background(AppColors.cardPurple)
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
     private func complete(_ habit: Habit) {
         engine.completeHabit(habit, pet: pet, appState: appState)
         reactionController.trigger()
         Haptics.success()
     }
 
-    private func deleteHabits(at offsets: IndexSet) {
-        for index in offsets {
-            modelContext.delete(habits[index])
-        }
+    private func deleteHabit(_ habit: Habit) {
+        modelContext.delete(habit)
     }
 
     private func triggerBounce() {
@@ -92,13 +108,14 @@ struct HabitsView: View {
     }
 }
 
-private struct HabitRow: View {
+private struct HabitListCard: View {
     @Bindable var habit: Habit
     let onComplete: () -> Void
     let onEdit: () -> Void
+    let onDelete: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(habit.title)
@@ -107,11 +124,20 @@ private struct HabitRow: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+
                 Spacer()
-                Button("Complete") {
+
+                Button {
                     onComplete()
+                } label: {
+                    Text("Complete")
+                        .font(.caption.weight(.semibold))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(AppColors.accentPurple)
+                        .foregroundStyle(.white)
+                        .clipShape(Capsule())
                 }
-                .buttonStyle(.borderedProminent)
             }
 
             HStack {
@@ -121,11 +147,23 @@ private struct HabitRow: View {
             }
             .font(.caption)
             .foregroundStyle(.secondary)
+
+            HStack {
+                Spacer()
+                Menu {
+                    Button("Edit", action: onEdit)
+                    Button("Delete", role: .destructive, action: onDelete)
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .foregroundStyle(.secondary)
+                        .padding(6)
+                }
+            }
         }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            onEdit()
-        }
+        .padding(14)
+        .background(.white)
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 4)
     }
 
     private var scheduleText: String {

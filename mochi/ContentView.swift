@@ -10,32 +10,34 @@ struct ContentView: View {
     @Query(sort: \Habit.createdAt) private var habits: [Habit]
 
     @StateObject private var reactionController = PetReactionController()
+    @State private var selection: AppTab = .home
 
     private let engine = GameEngine()
 
     var body: some View {
         Group {
             if let pet = pets.first, let appState = appStates.first {
-                TabView {
+                TabView(selection: $selection) {
                     HomeView(pet: pet, appState: appState)
-                        .tabItem {
-                            Label("Home", systemImage: "house")
-                        }
+                        .tag(AppTab.home)
 
                     HabitsView(pet: pet, appState: appState)
-                        .tabItem {
-                            Label("Habits", systemImage: "checklist")
-                        }
+                        .tag(AppTab.habits)
 
                     StoreView(pet: pet)
-                        .tabItem {
-                            Label("Store", systemImage: "cart")
-                        }
+                        .tag(AppTab.store)
 
                     SettingsView(pet: pet, appState: appState)
-                        .tabItem {
-                            Label("Settings", systemImage: "gearshape")
-                        }
+                        .tag(AppTab.settings)
+                }
+                .toolbar(.hidden, for: .tabBar)
+                .background(Color.appBackground.ignoresSafeArea())
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    AppTabBar(selection: $selection)
+                        .padding(.top, 6)
+                        .padding(.bottom, 10)
+                        .frame(maxWidth: .infinity)
+                        .background(Color.appBackground)
                 }
             } else {
                 ProgressView("Preparing mochi...")

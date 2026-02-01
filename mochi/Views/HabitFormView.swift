@@ -37,6 +37,8 @@ struct HabitFormView: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(Color.appBackground)
             .navigationTitle(habit == nil ? "New Habit" : "Edit Habit")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

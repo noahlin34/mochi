@@ -24,6 +24,8 @@ struct SettingsView: View {
                     Toggle("Tutorial seen", isOn: $appState.tutorialSeen)
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(Color.appBackground)
             .navigationTitle("Settings")
         }
     }
