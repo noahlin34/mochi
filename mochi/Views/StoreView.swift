@@ -7,59 +7,111 @@ struct StoreView: View {
 
     @Bindable var pet: Pet
 
-    @State private var selectedType: InventoryItemType = .outfit
+    @State private var selectedCategory: StoreCategory = .outfits
+
+    private let columns = [
+        GridItem(.flexible(), spacing: 16),
+        GridItem(.flexible(), spacing: 16)
+    ]
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 16) {
-                picker
-
-                ScrollView {
-                    LazyVStack(spacing: 12) {
-                        ForEach(filteredItems) { item in
-                            InventoryItemCard(
+            ScrollView {
+                VStack(spacing: 16) {
+                    headerCard
+                    categoryPill
+                    LazyVGrid(columns: columns, spacing: 16) {
+                        ForEach(Array(filteredItems.enumerated()), id: \.element.id) { index, item in
+                            StoreItemCard(
                                 item: item,
+                                accent: cardAccents[index % cardAccents.count],
                                 coins: pet.coins,
                                 onBuy: { buy(item) },
                                 onEquip: { equip(item) }
                             )
                         }
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 24)
                 }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 24)
             }
             .background(Color.appBackground)
-            .navigationTitle("Store")
+            .navigationTitle("Shop")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "circle.fill")
-                            .foregroundStyle(AppColors.accentPeach)
-                        Text("\(pet.coins)")
-                            .font(.subheadline.weight(.semibold))
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(AppColors.coinPill)
-                    .clipShape(Capsule())
+                    Image(systemName: "star.circle.fill")
+                        .foregroundStyle(AppColors.accentPeach)
                 }
             }
         }
     }
 
-    private var picker: some View {
-        Picker("Type", selection: $selectedType) {
-            ForEach(InventoryItemType.allCases) { type in
-                Text(type.displayName).tag(type)
+    private var headerCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Spend your coins on goodies!")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            HStack(spacing: 8) {
+                Image(systemName: "circle.fill")
+                    .font(.system(size: 12))
+                    .foregroundStyle(AppColors.accentPeach)
+                Text("\(pet.coins)")
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(AppColors.textPrimary)
+                Text("coins")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(.white)
+            .clipShape(Capsule())
+            .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background(AppColors.cardYellow)
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+    }
+
+    private var categoryPill: some View {
+        HStack(spacing: 6) {
+            ForEach(StoreCategory.allCases) { category in
+                Button {
+                    selectedCategory = category
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: category.icon)
+                            .font(.caption)
+                        Text(category.title)
+                            .font(.caption.weight(.semibold))
+                    }
+                    .foregroundStyle(selectedCategory == category ? .white : .secondary)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(
+                        Capsule()
+                            .fill(selectedCategory == category ? AppColors.accentPeach : Color.clear)
+                    )
+                }
+                .buttonStyle(.plain)
             }
         }
-        .pickerStyle(.segmented)
-        .padding(.horizontal, 20)
+        .padding(8)
+        .background(.white)
+        .clipShape(Capsule())
+        .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var filteredItems: [InventoryItem] {
-        items.filter { $0.type == selectedType }
+        items.filter { $0.type == selectedCategory.inventoryType }
+    }
+
+    private var cardAccents: [Color] {
+        [AppColors.cardGreen, AppColors.cardPeach, AppColors.cardPurple, AppColors.cardYellow]
     }
 
     private func buy(_ item: InventoryItem) {
@@ -80,55 +132,99 @@ struct StoreView: View {
     }
 }
 
-private struct InventoryItemCard: View {
+private struct StoreItemCard: View {
     @Bindable var item: InventoryItem
+    let accent: Color
     let coins: Int
     let onBuy: () -> Void
     let onEquip: () -> Void
 
     var body: some View {
-        HStack(spacing: 16) {
-            Image(systemName: item.assetName)
-                .font(.title2)
-                .frame(width: 48, height: 48)
-                .background(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        VStack(alignment: .leading, spacing: 10) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(accent.opacity(0.4))
+                    .frame(height: 100)
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(item.name)
-                    .font(.headline)
-                Text("Price: \(item.price)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Image(systemName: item.assetName)
+                    .font(.system(size: 28, weight: .semibold))
+                    .foregroundStyle(AppColors.accentPeach)
             }
 
-            Spacer()
-
-            if item.owned {
-                Button(item.equipped ? "Equipped" : "Equip") {
-                    onEquip()
-                }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(item.equipped ? AppColors.cardPurple : AppColors.cardGreen)
-                .clipShape(Capsule())
-            } else {
-                Button("Buy") {
-                    onBuy()
-                }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(coins >= item.price ? AppColors.cardYellow : .gray.opacity(0.2))
-                .clipShape(Capsule())
+            Text(item.name)
+                .font(.subheadline.weight(.semibold))
                 .foregroundStyle(AppColors.textPrimary)
-                .disabled(coins < item.price)
+
+            Text(item.type == .outfit ? "Outfit" : "Room decor")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            HStack(spacing: 6) {
+                Image(systemName: "circle.fill")
+                    .font(.system(size: 10))
+                    .foregroundStyle(AppColors.accentPeach)
+                Text("\(item.price)")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(AppColors.textPrimary)
+
+                Spacer()
+
+                if item.owned {
+                    Button(item.equipped ? "Equipped" : "Equip") {
+                        onEquip()
+                    }
+                    .buttonStyle(.plain)
+                    .font(.caption.weight(.semibold))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(item.equipped ? AppColors.cardPurple : AppColors.cardGreen)
+                    .clipShape(Capsule())
+                } else {
+                    Button("Buy") {
+                        onBuy()
+                    }
+                    .buttonStyle(.plain)
+                    .font(.caption.weight(.semibold))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(coins >= item.price ? AppColors.cardYellow : .gray.opacity(0.2))
+                    .clipShape(Capsule())
+                    .foregroundStyle(AppColors.textPrimary)
+                    .disabled(coins < item.price)
+                }
             }
         }
-        .padding(14)
+        .padding(12)
         .background(.white)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 4)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .shadow(color: .black.opacity(0.06), radius: 10, x: 0, y: 6)
+    }
+}
+
+private enum StoreCategory: String, CaseIterable, Identifiable {
+    case outfits
+    case rooms
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .outfits: return "Outfits"
+        case .rooms: return "Decor"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .outfits: return "tshirt"
+        case .rooms: return "house"
+        }
+    }
+
+    var inventoryType: InventoryItemType {
+        switch self {
+        case .outfits: return .outfit
+        case .rooms: return .room
+        }
     }
 }
