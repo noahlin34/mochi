@@ -19,13 +19,14 @@ enum SeedDataService {
             lastWeeklyReset: startOfWeek,
             selectedPetSpecies: .cat,
             tutorialSeen: false,
+            userName: "",
             currentStreak: 0
         )
         context.insert(appState)
 
         let pet = Pet(
             name: "Mochi",
-            species: .cat,
+            species: .dog,
             mood: 85,
             hunger: 80,
             cleanliness: 78,
@@ -36,9 +37,7 @@ enum SeedDataService {
         context.insert(pet)
 
         let demoHabits = [
-            Habit(title: "Drink water", scheduleType: .daily),
             Habit(title: "Walk 10 min", scheduleType: .xTimesPerWeek, targetPerWeek: 3),
-            Habit(title: "Stretch breaks", scheduleType: .xTimesPerDay, targetPerDay: 2),
             Habit(title: "Read 5 pages", scheduleType: .daily)
         ]
         demoHabits.forEach { context.insert($0) }

@@ -42,6 +42,19 @@ struct ContentView: View {
                             tabBarHeight = height
                         }
                 }
+                .fullScreenCover(
+                    isPresented: Binding(
+                        get: { !appState.tutorialSeen },
+                        set: { newValue in
+                            if !newValue {
+                                appState.tutorialSeen = true
+                            }
+                        }
+                    )
+                ) {
+                    TutorialView(pet: pet, appState: appState)
+                        .interactiveDismissDisabled()
+                }
             } else {
                 ProgressView("Preparing mochi...")
             }

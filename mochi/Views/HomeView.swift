@@ -56,7 +56,7 @@ struct HomeView: View {
                 .padding(16)
 
             VStack(spacing: 8) {
-                SpeechBubble(text: "Hi \(pet.name)! \(petStatusMessage)")
+                SpeechBubble(text: "Hi \(appState.userDisplayName)! \(petStatusMessage)")
                     .padding(.top, 10)
 
                 PetView(species: pet.species, outfitSymbol: equippedOutfit?.assetName, isBouncing: isBouncing)

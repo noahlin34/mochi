@@ -7,6 +7,7 @@ final class AppState {
     var lastWeeklyReset: Date
     var selectedPetSpecies: PetSpecies
     var tutorialSeen: Bool
+    var userName: String
     var currentStreak: Int
     var createdAt: Date
 
@@ -15,6 +16,7 @@ final class AppState {
         lastWeeklyReset: Date = Date(),
         selectedPetSpecies: PetSpecies = .cat,
         tutorialSeen: Bool = false,
+        userName: String = "",
         currentStreak: Int = 0,
         createdAt: Date = Date()
     ) {
@@ -22,7 +24,15 @@ final class AppState {
         self.lastWeeklyReset = lastWeeklyReset
         self.selectedPetSpecies = selectedPetSpecies
         self.tutorialSeen = tutorialSeen
+        self.userName = userName
         self.currentStreak = currentStreak
         self.createdAt = createdAt
+    }
+}
+
+extension AppState {
+    var userDisplayName: String {
+        let trimmed = userName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? "there" : trimmed
     }
 }

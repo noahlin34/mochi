@@ -22,6 +22,7 @@ enum PreviewData {
             lastWeeklyReset: now,
             selectedPetSpecies: .dog,
             tutorialSeen: true,
+            userName: "Noah",
             currentStreak: 4
         )
         context.insert(appState)

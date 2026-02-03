@@ -16,14 +16,39 @@ struct MochiApp: App {
             InventoryItem.self,
             AppState.self
         ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        return Self.makeModelContainer(schema: schema)
+    }()
+
+    private static func makeModelContainer(schema: Schema) -> ModelContainer {
+        let storeURL = Self.storeURL()
+        let configuration = ModelConfiguration(schema: schema, url: storeURL)
 
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            return try ModelContainer(for: schema, configurations: [configuration])
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            Self.resetStore(at: storeURL)
+            do {
+                return try ModelContainer(for: schema, configurations: [configuration])
+            } catch {
+                fatalError("Could not create ModelContainer: \(error)")
+            }
         }
-    }()
+    }
+
+    private static func storeURL() -> URL {
+        let baseURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let appURL = baseURL.appendingPathComponent("mochi", isDirectory: true)
+        try? FileManager.default.createDirectory(at: appURL, withIntermediateDirectories: true)
+        return appURL.appendingPathComponent("mochi.store")
+    }
+
+    private static func resetStore(at url: URL) {
+        let fm = FileManager.default
+        let walURL = URL(fileURLWithPath: url.path + "-wal")
+        let shmURL = URL(fileURLWithPath: url.path + "-shm")
+        let sqliteURLs = [url, walURL, shmURL]
+        sqliteURLs.forEach { try? fm.removeItem(at: $0) }
+    }
 
     var body: some Scene {
         WindowGroup {

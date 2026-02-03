@@ -257,13 +257,14 @@ private struct StoreItemCard: View {
 
     var body: some View {
         let isAvailable = item.isAvailable(for: activeSpecies)
+        let previewImageName = resolvedPreviewName()
         VStack(alignment: .leading, spacing: 10) {
             ZStack {
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
                     .fill(accent.opacity(0.4))
                     .frame(height: 100)
 
-                itemPreview
+                itemPreview(imageName: previewImageName)
             }
 
             Text(item.name)
@@ -331,13 +332,19 @@ private struct StoreItemCard: View {
         }
     }
 
-    private var itemPreview: some View {
+    private func itemPreview(imageName: String?) -> some View {
         Group {
-            if let imageName = resolvedPreviewName() {
-                Image(imageName)
-                    .resizable()
-                    .scaledToFit()
-                    .padding(8)
+            if let imageName {
+                ZStack {
+                    Image(imageName)
+                        .resizable()
+                        .scaledToFit()
+                        .padding(8)
+
+                    if shouldOverlayEyes(for: imageName) {
+                        StaticPetEyes(species: previewSpecies)
+                    }
+                }
             } else {
                 Image(systemName: item.assetName)
                     .font(.system(size: 28, weight: .semibold))
@@ -369,6 +376,15 @@ private struct StoreItemCard: View {
             }
         }
         return nil
+    }
+
+    private var previewSpecies: PetSpecies {
+        item.petSpecies ?? activeSpecies
+    }
+
+    private func shouldOverlayEyes(for imageName: String) -> Bool {
+        guard item.type == .outfit else { return false }
+        return imageName.contains("_pet")
     }
 
     private var itemSpeciesLabel: String {
@@ -406,6 +422,53 @@ private enum StoreCategory: String, CaseIterable, Identifiable {
         switch self {
         case .outfits: return .outfit
         case .rooms: return .room
+        }
+    }
+}
+
+private struct StaticPetEyes: View {
+    let species: PetSpecies
+
+    var body: some View {
+        GeometryReader { proxy in
+            let base = min(proxy.size.width, proxy.size.height)
+            let scale = base / 160
+            let config = EyeConfig.forSpecies(species)
+            let eyeSize = config.size * scale
+            let halfSeparation = (config.separation * scale) / 2
+
+            ZStack {
+                Circle()
+                    .fill(Color.black.opacity(0.9))
+                    .frame(width: eyeSize, height: eyeSize)
+                    .offset(x: config.centerX * scale - halfSeparation, y: config.centerY * scale)
+
+                Circle()
+                    .fill(Color.black.opacity(0.9))
+                    .frame(width: eyeSize, height: eyeSize)
+                    .offset(x: config.centerX * scale + halfSeparation, y: config.centerY * scale)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+
+    private struct EyeConfig {
+        let centerX: CGFloat
+        let centerY: CGFloat
+        let separation: CGFloat
+        let size: CGFloat
+
+        static func forSpecies(_ species: PetSpecies) -> EyeConfig {
+            switch species {
+            case .dog:
+                return EyeConfig(centerX: -5, centerY: -21, separation: 22, size: 8)
+            case .penguin:
+                return EyeConfig(centerX: -10, centerY: -20, separation: 25, size: 9)
+            case .cat:
+                return EyeConfig(centerX: 0, centerY: -18, separation: 24, size: 7)
+            case .bunny:
+                return EyeConfig(centerX: 0, centerY: -16, separation: 22, size: 7)
+            }
         }
     }
 }
