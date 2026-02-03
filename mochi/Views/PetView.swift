@@ -9,7 +9,6 @@ struct PetView: View {
     @State private var idleOffset: CGFloat = 0
     @State private var tailWag = false
     @State private var blink = false
-    @State private var didStartIdle = false
     @State private var blinkTask: Task<Void, Never>?
 
     var body: some View {
@@ -31,6 +30,12 @@ struct PetView: View {
         .onAppear {
             startIdleAnimations()
         }
+        .onChange(of: species) { _, _ in
+            startIdleAnimations()
+        }
+        .onChange(of: outfitSymbol) { _, _ in
+            startIdleAnimations()
+        }
         .onDisappear {
             stopIdleAnimations()
         }
@@ -44,13 +49,17 @@ struct PetView: View {
             DogPetView(blink: blink, tailWag: tailWag, outfitAssetName: outfitSymbol)
         case .bunny:
             BunnyPetView(blink: blink)
+        case .penguin:
+            PenguinPetView(blink: blink, tailWag: tailWag, outfitAssetName: outfitSymbol)
         }
     }
 
     private func startIdleAnimations() {
-        guard !didStartIdle else { return }
-        didStartIdle = true
-
+        blinkTask?.cancel()
+        blinkTask = nil
+        idleOffset = 0
+        tailWag = false
+        blink = false
         withAnimation(.easeInOut(duration: 2.4).repeatForever(autoreverses: true)) {
             idleOffset = 6
         }
@@ -80,7 +89,6 @@ struct PetView: View {
     private func stopIdleAnimations() {
         blinkTask?.cancel()
         blinkTask = nil
-        didStartIdle = false
     }
 }
 
@@ -247,9 +255,13 @@ private struct DogStaticPetView: View {
         .shadow(color: Color.black.opacity(0.18), radius: breathe ? 8 : 6, x: 0, y: 8)
         .padding(.top, 6)
         .onAppear {
+            breathe = false
+            blink = false
             withAnimation(.easeInOut(duration: 2.4).repeatForever(autoreverses: true)) {
                 breathe = true
             }
+            blinkTask?.cancel()
+            blinkTask = nil
             startBlinking()
         }
         .onDisappear {
@@ -269,13 +281,13 @@ private struct DogStaticPetView: View {
                 .fill(Color.black.opacity(0.9))
                 .frame(width: eyeSize, height: eyeSize)
                 .offset(x: eyeCenterX - halfSeparation, y: eyeCenterY)
-                .scaleEffect(x: 1.0, y: blink ? 0.2 : 1.0, anchor: .center)
+                .scaleEffect(x: 1.0, y: blink ? 0.6 : 1.0, anchor: .center)
 
             Circle()
                 .fill(Color.black.opacity(0.9))
                 .frame(width: eyeSize, height: eyeSize)
                 .offset(x: eyeCenterX + halfSeparation, y: eyeCenterY)
-                .scaleEffect(x: 1.0, y: blink ? 0.2 : 1.0, anchor: .center)
+                .scaleEffect(x: 1.0, y: blink ? 0.6 : 1.0, anchor: .center)
         }
     }
 
@@ -487,12 +499,12 @@ private struct DogFaceDetails: View {
                 .fill(Color.black.opacity(0.9))
                 .frame(width: 16, height: 16)
                 .offset(x: -24, y: -6)
-                .scaleEffect(y: blink ? 0.2 : 1.0)
+                .scaleEffect(y: blink ? 0.6 : 1.0)
             Circle()
                 .fill(Color.black.opacity(0.9))
                 .frame(width: 16, height: 16)
                 .offset(x: 24, y: -6)
-                .scaleEffect(y: blink ? 0.2 : 1.0)
+                .scaleEffect(y: blink ? 0.6 : 1.0)
 
             Circle()
                 .fill(Color.white.opacity(0.7))
@@ -652,8 +664,8 @@ private struct CatFaceDetails: View {
                 .frame(width: 60, height: 40)
                 .offset(y: 16)
 
-            Circle().fill(.black.opacity(0.85)).frame(width: 12, height: 12).offset(x: -22, y: -6).scaleEffect(y: blink ? 0.2 : 1.0)
-            Circle().fill(.black.opacity(0.85)).frame(width: 12, height: 12).offset(x: 22, y: -6).scaleEffect(y: blink ? 0.2 : 1.0)
+            Circle().fill(.black.opacity(0.85)).frame(width: 12, height: 12).offset(x: -22, y: -6).scaleEffect(y: blink ? 0.6 : 1.0)
+            Circle().fill(.black.opacity(0.85)).frame(width: 12, height: 12).offset(x: 22, y: -6).scaleEffect(y: blink ? 0.6 : 1.0)
 
             RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(Color.black.opacity(0.8))
@@ -738,8 +750,8 @@ private struct BunnyFaceDetails: View {
                 .frame(width: 64, height: 46)
                 .offset(y: 16)
 
-            Circle().fill(.black.opacity(0.85)).frame(width: 12, height: 12).offset(x: -18, y: -4).scaleEffect(y: blink ? 0.2 : 1.0)
-            Circle().fill(.black.opacity(0.85)).frame(width: 12, height: 12).offset(x: 18, y: -4).scaleEffect(y: blink ? 0.2 : 1.0)
+            Circle().fill(.black.opacity(0.85)).frame(width: 12, height: 12).offset(x: -18, y: -4).scaleEffect(y: blink ? 0.6 : 1.0)
+            Circle().fill(.black.opacity(0.85)).frame(width: 12, height: 12).offset(x: 18, y: -4).scaleEffect(y: blink ? 0.6 : 1.0)
 
             RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(Color.black.opacity(0.8))
@@ -749,11 +761,174 @@ private struct BunnyFaceDetails: View {
     }
 }
 
+private struct PenguinPetView: View {
+    let blink: Bool
+    let tailWag: Bool
+    let outfitAssetName: String?
+
+    var body: some View {
+        if let staticName = resolvedStaticName() {
+            PenguinStaticPetView(imageName: staticName)
+        } else {
+            PenguinVectorPetView(blink: blink)
+        }
+    }
+
+    private func resolvedStaticName() -> String? {
+        if let outfitAssetName,
+           UIImage(named: "penguin_pet_\(outfitAssetName)") != nil {
+            return "penguin_pet_\(outfitAssetName)"
+        }
+        if UIImage(named: "penguin_pet") != nil {
+            return "penguin_pet"
+        }
+        return nil
+    }
+}
+
+private struct PenguinStaticPetView: View {
+    let imageName: String
+
+    @State private var breathe = false
+    @State private var blink = false
+    @State private var blinkTask: Task<Void, Never>?
+
+    @AppStorage("penguinEyeCenterX") private var eyeCenterXStorage: Double = -10
+    @AppStorage("penguinEyeCenterY") private var eyeCenterYStorage: Double = -20
+    @AppStorage("penguinEyeSeparation") private var eyeSeparationStorage: Double = 25
+    @AppStorage("penguinEyeSize") private var eyeSizeStorage: Double = 9
+
+    var body: some View {
+        ZStack {
+            Image(imageName)
+                .resizable()
+                .scaledToFit()
+
+            eyeOverlay
+        }
+        .frame(width: 160, height: 160)
+        .scaleEffect(breathe ? 1.02 : 1.0)
+        .rotationEffect(.degrees(breathe ? 0.6 : 0.0))
+        .shadow(color: Color.black.opacity(0.18), radius: breathe ? 8 : 6, x: 0, y: 8)
+        .padding(.top, 6)
+        .onAppear {
+            breathe = false
+            blink = false
+            withAnimation(.easeInOut(duration: 2.4).repeatForever(autoreverses: true)) {
+                breathe = true
+            }
+            blinkTask?.cancel()
+            blinkTask = nil
+            startBlinking()
+        }
+        .onDisappear {
+            blinkTask?.cancel()
+            blinkTask = nil
+        }
+    }
+
+    private var eyeOverlay: some View {
+        let eyeCenterX = CGFloat(eyeCenterXStorage)
+        let eyeCenterY = CGFloat(eyeCenterYStorage)
+        let halfSeparation = CGFloat(eyeSeparationStorage) / 2
+        let eyeSize = CGFloat(eyeSizeStorage)
+
+        return ZStack {
+            Circle()
+                .fill(Color.black.opacity(0.9))
+                .frame(width: eyeSize, height: eyeSize)
+                .offset(x: eyeCenterX - halfSeparation, y: eyeCenterY)
+                .scaleEffect(x: 1.0, y: blink ? 0.6 : 1.0, anchor: .center)
+
+            Circle()
+                .fill(Color.black.opacity(0.9))
+                .frame(width: eyeSize, height: eyeSize)
+                .offset(x: eyeCenterX + halfSeparation, y: eyeCenterY)
+                .scaleEffect(x: 1.0, y: blink ? 0.6 : 1.0, anchor: .center)
+        }
+    }
+
+    private func startBlinking() {
+        guard blinkTask == nil else { return }
+        blinkTask = Task {
+            while !Task.isCancelled {
+                let wait = Double.random(in: 2.4...4.2)
+                try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
+                await MainActor.run {
+                    withAnimation(.easeInOut(duration: 0.12)) {
+                        blink = true
+                    }
+                }
+                try? await Task.sleep(nanoseconds: 120_000_000)
+                await MainActor.run {
+                    withAnimation(.easeOut(duration: 0.14)) {
+                        blink = false
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct PenguinVectorPetView: View {
+    let blink: Bool
+
+    private let outlineColor = Color(red: 0.15, green: 0.18, blue: 0.22)
+    private let bodyColor = Color(red: 0.20, green: 0.22, blue: 0.28)
+    private let bellyColor = Color(red: 0.96, green: 0.95, blue: 0.94)
+    private let beakColor = Color(red: 0.98, green: 0.74, blue: 0.42)
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 52, style: .continuous)
+                .fill(outlineColor)
+                .frame(width: 124, height: 138)
+            RoundedRectangle(cornerRadius: 48, style: .continuous)
+                .fill(bodyColor)
+                .frame(width: 116, height: 128)
+            RoundedRectangle(cornerRadius: 42, style: .continuous)
+                .fill(bellyColor)
+                .frame(width: 78, height: 90)
+                .offset(y: 12)
+
+            Circle()
+                .fill(Color.black.opacity(0.9))
+                .frame(width: 12, height: 12)
+                .offset(x: -18, y: -14)
+                .scaleEffect(y: blink ? 0.6 : 1.0)
+            Circle()
+                .fill(Color.black.opacity(0.9))
+                .frame(width: 12, height: 12)
+                .offset(x: 18, y: -14)
+                .scaleEffect(y: blink ? 0.6 : 1.0)
+
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(beakColor)
+                .frame(width: 18, height: 12)
+                .offset(y: 4)
+
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(bodyColor)
+                .frame(width: 26, height: 42)
+                .rotationEffect(.degrees(-18))
+                .offset(x: -58, y: 8)
+
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(bodyColor)
+                .frame(width: 26, height: 42)
+                .rotationEffect(.degrees(18))
+                .offset(x: 58, y: 8)
+        }
+        .frame(width: 170, height: 170)
+    }
+}
+
 #Preview {
     VStack(spacing: 16) {
         PetView(species: .dog, outfitSymbol: nil, isBouncing: false)
         PetView(species: .cat, outfitSymbol: nil, isBouncing: false)
         PetView(species: .bunny, outfitSymbol: nil, isBouncing: false)
+        PetView(species: .penguin, outfitSymbol: nil, isBouncing: false)
     }
     .padding()
     .background(Color.appBackground)

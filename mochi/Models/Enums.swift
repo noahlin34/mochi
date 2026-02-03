@@ -42,11 +42,17 @@ enum PetSpecies: String, Codable, CaseIterable, Identifiable {
     case cat
     case dog
     case bunny
+    case penguin
 
     var id: String { rawValue }
 
     var displayName: String {
-        rawValue.capitalized
+        switch self {
+        case .cat, .dog, .bunny:
+            return rawValue.capitalized
+        case .penguin:
+            return "Penguin"
+        }
     }
 }
 

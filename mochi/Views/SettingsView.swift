@@ -17,6 +17,11 @@ struct SettingsView: View {
     @AppStorage("dogEyeCenterY") private var dogEyeCenterY: Double = -21
     @AppStorage("dogEyeSeparation") private var dogEyeSeparation: Double = 26
     @AppStorage("dogEyeSize") private var dogEyeSize: Double = 10
+    @AppStorage("penguinEyeTunerEnabled") private var penguinEyeTunerEnabled = false
+    @AppStorage("penguinEyeCenterX") private var penguinEyeCenterX: Double = 0
+    @AppStorage("penguinEyeCenterY") private var penguinEyeCenterY: Double = -20
+    @AppStorage("penguinEyeSeparation") private var penguinEyeSeparation: Double = 20
+    @AppStorage("penguinEyeSize") private var penguinEyeSize: Double = 8
 
     private let progressColumns = [
         GridItem(.flexible(), spacing: 12),
@@ -165,7 +170,7 @@ struct SettingsView: View {
             SettingsToggleRow(
                 icon: "eye.fill",
                 iconTint: AppColors.cardPurple,
-                title: "Eye Tuner",
+                title: "Dog Eye Tuner",
                 isOn: $dogEyeTunerEnabled
             )
 
@@ -175,6 +180,26 @@ struct SettingsView: View {
                     SettingsSliderRow(title: "Eye Center Y", value: $dogEyeCenterY, range: -40...40)
                     SettingsSliderRow(title: "Eye Separation", value: $dogEyeSeparation, range: 10...60)
                     SettingsSliderRow(title: "Eye Size", value: $dogEyeSize, range: 4...24)
+                }
+                .padding(12)
+                .background(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 4)
+            }
+
+            SettingsToggleRow(
+                icon: "eye.fill",
+                iconTint: AppColors.cardGreen,
+                title: "Penguin Eye Tuner",
+                isOn: $penguinEyeTunerEnabled
+            )
+
+            if penguinEyeTunerEnabled {
+                VStack(spacing: 12) {
+                    SettingsSliderRow(title: "Eye Center X", value: $penguinEyeCenterX, range: -40...40)
+                    SettingsSliderRow(title: "Eye Center Y", value: $penguinEyeCenterY, range: -40...40)
+                    SettingsSliderRow(title: "Eye Separation", value: $penguinEyeSeparation, range: 10...60)
+                    SettingsSliderRow(title: "Eye Size", value: $penguinEyeSize, range: 4...24)
                 }
                 .padding(12)
                 .background(.white)
