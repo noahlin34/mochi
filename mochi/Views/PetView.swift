@@ -12,17 +12,7 @@ struct PetView: View {
     @State private var blinkTask: Task<Void, Never>?
 
     var body: some View {
-        ZStack {
-            petBody
-            if let outfitSymbol, species != .dog {
-                Image(systemName: outfitSymbol)
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .padding(8)
-                    .background(Circle().fill(.black.opacity(0.2)))
-                    .offset(y: 44)
-            }
-        }
+        petBody
         .frame(width: 170, height: 170)
         .offset(y: idleOffset)
         .scaleEffect(isBouncing ? 1.08 : 1.0)

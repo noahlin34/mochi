@@ -116,7 +116,11 @@ struct HomeView: View {
     }
 
     private var equippedOutfit: InventoryItem? {
-        items.first { $0.type == .outfit && $0.equipped }
+        let equipped = items.filter { $0.type == .outfit && $0.equipped }
+        if let match = equipped.first(where: { $0.petSpecies == pet.species }) {
+            return match
+        }
+        return equipped.first(where: { $0.petSpecies == nil })
     }
 
     private var equippedRoom: InventoryItem? {

@@ -10,6 +10,7 @@ struct StoreView: View {
 
     @State private var selectedCategory: StoreCategory = .outfits
     @State private var previewItem: InventoryItem?
+    @AppStorage("storeShowAllItems") private var showAllItems = false
 
     private let columns = [
         GridItem(.flexible(), spacing: 16),
@@ -23,11 +24,13 @@ struct StoreView: View {
                     headerCard
                     petPreviewCard
                     categoryPill
+                    availabilityToggle
                     LazyVGrid(columns: columns, spacing: 16) {
                         ForEach(Array(filteredItems.enumerated()), id: \.element.id) { index, item in
                             StoreItemCard(
                                 item: item,
                                 accent: cardAccents[index % cardAccents.count],
+                                activeSpecies: pet.species,
                                 coins: pet.coins,
                                 onBuy: { buy(item) },
                                 onToggleEquip: { toggleEquip(item) },
@@ -50,6 +53,11 @@ struct StoreView: View {
         }
         .onChange(of: selectedCategory) { _, _ in
             previewItem = nil
+        }
+        .onChange(of: showAllItems) { _, _ in
+            if !showAllItems, let previewItem, !previewItem.isAvailable(for: pet.species) {
+                self.previewItem = nil
+            }
         }
     }
 
@@ -117,8 +125,28 @@ struct StoreView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    private var availabilityToggle: some View {
+        HStack {
+            Text("Show all pets")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(AppColors.textPrimary)
+            Spacer()
+            Toggle("", isOn: $showAllItems)
+                .labelsHidden()
+                .tint(AppColors.accentPeach)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(.white)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 4)
+    }
+
     private var filteredItems: [InventoryItem] {
-        items.filter { $0.type == selectedCategory.inventoryType }
+        items.filter { item in
+            item.type == selectedCategory.inventoryType
+                && (showAllItems || item.isAvailable(for: pet.species))
+        }
     }
 
     private var cardAccents: [Color] {
@@ -126,7 +154,11 @@ struct StoreView: View {
     }
 
     private var equippedOutfit: InventoryItem? {
-        items.first { $0.type == .outfit && $0.equipped }
+        let equipped = items.filter { $0.type == .outfit && $0.equipped }
+        if let match = equipped.first(where: { $0.petSpecies == pet.species }) {
+            return match
+        }
+        return equipped.first(where: { $0.petSpecies == nil })
     }
 
     private var equippedRoom: InventoryItem? {
@@ -147,7 +179,15 @@ struct StoreView: View {
         return equippedRoom
     }
 
+    private var previewSpecies: PetSpecies {
+        if let previewItem, previewItem.type == .outfit {
+            return previewItem.petSpecies ?? pet.species
+        }
+        return pet.species
+    }
+
     private func buy(_ item: InventoryItem) {
+        guard item.isAvailable(for: pet.species) else { return }
         guard !item.owned, pet.coins >= item.price else { return }
         pet.coins -= item.price
         item.owned = true
@@ -157,14 +197,21 @@ struct StoreView: View {
 
     private func equip(_ item: InventoryItem) {
         guard item.owned else { return }
-        for other in items where other.type == item.type {
-            other.equipped = false
+        if item.type == .room {
+            for other in items where other.type == .room {
+                other.equipped = false
+            }
+        } else {
+            for other in items where other.type == item.type && other.petSpecies == item.petSpecies {
+                other.equipped = false
+            }
         }
         item.equipped = true
         reactionController.trigger()
     }
 
     private func toggleEquip(_ item: InventoryItem) {
+        guard item.isAvailable(for: pet.species) else { return }
         guard item.owned else { return }
         if item.equipped {
             item.equipped = false
@@ -176,9 +223,7 @@ struct StoreView: View {
     private var petPreviewCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Preview")
-                    .font(.headline)
-                    .foregroundStyle(AppColors.textPrimary)
+
                 Spacer()
                 Text("Tap an item to preview")
                     .font(.caption)
@@ -192,7 +237,7 @@ struct StoreView: View {
                 LandscapeBackgroundView(assetName: previewRoom?.assetName)
                     .padding(12)
 
-                PetView(species: pet.species, outfitSymbol: previewOutfit?.assetName, isBouncing: false)
+                PetView(species: previewSpecies, outfitSymbol: previewOutfit?.assetName, isBouncing: false)
                     .scaleEffect(0.8)
                     .padding(.top, 8)
             }
@@ -204,12 +249,14 @@ struct StoreView: View {
 private struct StoreItemCard: View {
     @Bindable var item: InventoryItem
     let accent: Color
+    let activeSpecies: PetSpecies
     let coins: Int
     let onBuy: () -> Void
     let onToggleEquip: () -> Void
     let onPreview: () -> Void
 
     var body: some View {
+        let isAvailable = item.isAvailable(for: activeSpecies)
         VStack(alignment: .leading, spacing: 10) {
             ZStack {
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -227,6 +274,10 @@ private struct StoreItemCard: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
+            Text(itemSpeciesLabel)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(isAvailable ? .secondary : AppColors.accentPeach)
+
             HStack(spacing: 6) {
                 Image(systemName: "circle.fill")
                     .font(.system(size: 10))
@@ -237,7 +288,14 @@ private struct StoreItemCard: View {
 
                 Spacer()
 
-                if item.owned {
+                if !isAvailable {
+                    Text("Not for this pet")
+                        .font(.caption.weight(.semibold))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.gray.opacity(0.2))
+                        .clipShape(Capsule())
+                } else if item.owned {
                     Text(item.equipped ? "Equipped" : "Equip")
                         .font(.caption.weight(.semibold))
                         .padding(.horizontal, 10)
@@ -299,12 +357,28 @@ private struct StoreItemCard: View {
             }
         }
         if item.type == .outfit {
-            let dogOutfit = "dog_pet_\(item.assetName)"
-            if UIImage(named: dogOutfit) != nil {
-                return dogOutfit
+            if let petSpecies = item.petSpecies {
+                let petOutfit = "\(petSpecies.rawValue)_pet_\(item.assetName)"
+                if UIImage(named: petOutfit) != nil {
+                    return petOutfit
+                }
+            }
+            let fallbackDogOutfit = "dog_pet_\(item.assetName)"
+            if UIImage(named: fallbackDogOutfit) != nil {
+                return fallbackDogOutfit
             }
         }
         return nil
+    }
+
+    private var itemSpeciesLabel: String {
+        if item.type == .room {
+            return "All pets"
+        }
+        if let petSpecies = item.petSpecies {
+            return "For \(petSpecies.displayName)"
+        }
+        return "All pets"
     }
 }
 

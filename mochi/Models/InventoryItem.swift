@@ -10,6 +10,7 @@ final class InventoryItem {
     var owned: Bool
     var equipped: Bool
     var assetName: String
+    var petSpeciesRaw: String?
     var createdAt: Date
 
     init(
@@ -20,6 +21,7 @@ final class InventoryItem {
         owned: Bool = false,
         equipped: Bool = false,
         assetName: String,
+        petSpecies: PetSpecies? = nil,
         createdAt: Date = Date()
     ) {
         self.id = id
@@ -29,6 +31,23 @@ final class InventoryItem {
         self.owned = owned
         self.equipped = equipped
         self.assetName = assetName
+        self.petSpeciesRaw = petSpecies?.rawValue
         self.createdAt = createdAt
+    }
+
+    var petSpecies: PetSpecies? {
+        get {
+            guard let petSpeciesRaw else { return nil }
+            return PetSpecies(rawValue: petSpeciesRaw)
+        }
+        set {
+            petSpeciesRaw = newValue?.rawValue
+        }
+    }
+
+    func isAvailable(for species: PetSpecies) -> Bool {
+        if type == .room { return true }
+        guard let petSpecies else { return true }
+        return petSpecies == species
     }
 }

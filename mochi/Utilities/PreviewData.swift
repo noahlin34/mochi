@@ -47,12 +47,14 @@ enum PreviewData {
         habits.forEach { context.insert($0) }
 
         let catalog = [
-            InventoryItem(type: .outfit, name: "Sunny Tee", price: 30, owned: true, equipped: true, assetName: "tshirt"),
-            InventoryItem(type: .outfit, name: "Royal Crown", price: 60, owned: false, equipped: false, assetName: "crown"),
-            InventoryItem(type: .outfit, name: "Sparkle Charm", price: 45, owned: false, equipped: false, assetName: "sparkles"),
+            InventoryItem(type: .outfit, name: "Bandana", price: 30, owned: true, equipped: true, assetName: "bandana", petSpecies: .dog),
+            InventoryItem(type: .outfit, name: "Royal Crown", price: 60, owned: false, equipped: false, assetName: "crown", petSpecies: .cat),
+            InventoryItem(type: .outfit, name: "Sparkle Charm", price: 45, owned: false, equipped: false, assetName: "sparkles", petSpecies: .bunny),
+            InventoryItem(type: .outfit, name: "Snow Scarf", price: 35, owned: false, equipped: false, assetName: "scarf", petSpecies: .penguin),
             InventoryItem(type: .room, name: "Cozy Home", price: 40, owned: true, equipped: true, assetName: "house"),
-            InventoryItem(type: .room, name: "Desk Lamp", price: 55, owned: false, equipped: false, assetName: "lamp.desk"),
-            InventoryItem(type: .room, name: "Dreamy Bed", price: 70, owned: false, equipped: false, assetName: "bed.double")
+            InventoryItem(type: .room, name: "Beach Resort", price: 55, owned: false, equipped: false, assetName: "beach"),
+            InventoryItem(type: .room, name: "Dreamy Bed", price: 70, owned: false, equipped: false, assetName: "bed.double"),
+            InventoryItem(type: .room, name: "Ice Igloo", price: 65, owned: false, equipped: false, assetName: "igloo")
         ]
         catalog.forEach { context.insert($0) }
 
