@@ -76,3 +76,9 @@ struct HabitFormView: View {
         dismiss()
     }
 }
+
+#Preview {
+    let preview = PreviewData.make()
+    return HabitFormView(habit: nil)
+        .modelContainer(preview.container)
+}

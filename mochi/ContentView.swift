@@ -56,6 +56,8 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView()
-        .modelContainer(for: [Habit.self, Pet.self, InventoryItem.self, AppState.self], inMemory: true)
+    let preview = PreviewData.make()
+    return ContentView()
+        .modelContainer(preview.container)
+        .environmentObject(PetReactionController())
 }

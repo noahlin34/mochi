@@ -64,3 +64,9 @@ struct AppTabBar: View {
         .padding(.horizontal, 24)
     }
 }
+
+#Preview {
+    AppTabBar(selection: .constant(.home))
+        .padding()
+        .background(Color.appBackground)
+}

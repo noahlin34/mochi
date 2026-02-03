@@ -176,3 +176,10 @@ private struct HabitListCard: View {
         }
     }
 }
+
+#Preview {
+    let preview = PreviewData.make()
+    return HabitsView(pet: preview.pet, appState: preview.appState)
+        .modelContainer(preview.container)
+        .environmentObject(PetReactionController())
+}

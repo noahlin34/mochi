@@ -8,6 +8,7 @@ struct StoreView: View {
     @Bindable var pet: Pet
 
     @State private var selectedCategory: StoreCategory = .outfits
+    @State private var previewItem: InventoryItem?
 
     private let columns = [
         GridItem(.flexible(), spacing: 16),
@@ -19,6 +20,7 @@ struct StoreView: View {
             ScrollView {
                 VStack(spacing: 16) {
                     headerCard
+                    petPreviewCard
                     categoryPill
                     LazyVGrid(columns: columns, spacing: 16) {
                         ForEach(Array(filteredItems.enumerated()), id: \.element.id) { index, item in
@@ -27,7 +29,8 @@ struct StoreView: View {
                                 accent: cardAccents[index % cardAccents.count],
                                 coins: pet.coins,
                                 onBuy: { buy(item) },
-                                onEquip: { equip(item) }
+                                onToggleEquip: { toggleEquip(item) },
+                                onPreview: { previewItem = item }
                             )
                         }
                     }
@@ -43,6 +46,9 @@ struct StoreView: View {
                         .foregroundStyle(AppColors.accentPeach)
                 }
             }
+        }
+        .onChange(of: selectedCategory) { _, _ in
+            previewItem = nil
         }
     }
 
@@ -114,6 +120,28 @@ struct StoreView: View {
         [AppColors.cardGreen, AppColors.cardPeach, AppColors.cardPurple, AppColors.cardYellow]
     }
 
+    private var equippedOutfit: InventoryItem? {
+        items.first { $0.type == .outfit && $0.equipped }
+    }
+
+    private var equippedRoom: InventoryItem? {
+        items.first { $0.type == .room && $0.equipped }
+    }
+
+    private var previewOutfit: InventoryItem? {
+        if let previewItem, previewItem.type == .outfit {
+            return previewItem
+        }
+        return equippedOutfit
+    }
+
+    private var previewRoom: InventoryItem? {
+        if let previewItem, previewItem.type == .room {
+            return previewItem
+        }
+        return equippedRoom
+    }
+
     private func buy(_ item: InventoryItem) {
         guard !item.owned, pet.coins >= item.price else { return }
         pet.coins -= item.price
@@ -130,6 +158,42 @@ struct StoreView: View {
         item.equipped = true
         reactionController.trigger()
     }
+
+    private func toggleEquip(_ item: InventoryItem) {
+        guard item.owned else { return }
+        if item.equipped {
+            item.equipped = false
+        } else {
+            equip(item)
+        }
+    }
+
+    private var petPreviewCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Preview")
+                    .font(.headline)
+                    .foregroundStyle(AppColors.textPrimary)
+                Spacer()
+                Text("Tap an item to preview")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            ZStack {
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(AppColors.cardPurple.opacity(0.6))
+
+                LandscapeBackgroundView(assetName: previewRoom?.assetName)
+                    .padding(12)
+
+                PetView(species: pet.species, outfitSymbol: previewOutfit?.assetName, isBouncing: false)
+                    .scaleEffect(0.8)
+                    .padding(.top, 8)
+            }
+            .frame(height: 200)
+        }
+    }
 }
 
 private struct StoreItemCard: View {
@@ -137,7 +201,8 @@ private struct StoreItemCard: View {
     let accent: Color
     let coins: Int
     let onBuy: () -> Void
-    let onEquip: () -> Void
+    let onToggleEquip: () -> Void
+    let onPreview: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -146,9 +211,7 @@ private struct StoreItemCard: View {
                     .fill(accent.opacity(0.4))
                     .frame(height: 100)
 
-                Image(systemName: item.assetName)
-                    .font(.system(size: 28, weight: .semibold))
-                    .foregroundStyle(AppColors.accentPeach)
+                itemPreview
             }
 
             Text(item.name)
@@ -170,15 +233,16 @@ private struct StoreItemCard: View {
                 Spacer()
 
                 if item.owned {
-                    Button(item.equipped ? "Equipped" : "Equip") {
-                        onEquip()
-                    }
-                    .buttonStyle(.plain)
-                    .font(.caption.weight(.semibold))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
-                    .background(item.equipped ? AppColors.cardPurple : AppColors.cardGreen)
-                    .clipShape(Capsule())
+                    Text(item.equipped ? "Equipped" : "Equip")
+                        .font(.caption.weight(.semibold))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(item.equipped ? AppColors.cardPurple : AppColors.cardGreen)
+                        .clipShape(Capsule())
+                        .contentShape(Capsule())
+                        .onTapGesture {
+                            onToggleEquip()
+                        }
                 } else {
                     Button("Buy") {
                         onBuy()
@@ -198,6 +262,44 @@ private struct StoreItemCard: View {
         .background(.white)
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .shadow(color: .black.opacity(0.06), radius: 10, x: 0, y: 6)
+        .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .onTapGesture {
+            onPreview()
+        }
+    }
+
+    private var itemPreview: some View {
+        Group {
+            if let imageName = resolvedPreviewName() {
+                Image(imageName)
+                    .resizable()
+                    .scaledToFit()
+                    .padding(8)
+            } else {
+                Image(systemName: item.assetName)
+                    .font(.system(size: 28, weight: .semibold))
+                    .foregroundStyle(AppColors.accentPeach)
+            }
+        }
+    }
+
+    private func resolvedPreviewName() -> String? {
+        if UIImage(named: item.assetName) != nil {
+            return item.assetName
+        }
+        if item.type == .room {
+            let roomName = "room_\(item.assetName)"
+            if UIImage(named: roomName) != nil {
+                return roomName
+            }
+        }
+        if item.type == .outfit {
+            let dogOutfit = "dog_pet_\(item.assetName)"
+            if UIImage(named: dogOutfit) != nil {
+                return dogOutfit
+            }
+        }
+        return nil
     }
 }
 
@@ -227,4 +329,11 @@ private enum StoreCategory: String, CaseIterable, Identifiable {
         case .rooms: return .room
         }
     }
+}
+
+#Preview {
+    let preview = PreviewData.make()
+    return StoreView(pet: preview.pet)
+        .modelContainer(preview.container)
+        .environmentObject(PetReactionController())
 }

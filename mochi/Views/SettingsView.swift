@@ -12,7 +12,11 @@ struct SettingsView: View {
     @State private var showSupportAlert = false
 
     @AppStorage("notificationsEnabled") private var notificationsEnabled = true
-    @AppStorage("darkModeEnabled") private var darkModeEnabled = false
+    @AppStorage("dogEyeTunerEnabled") private var dogEyeTunerEnabled = false
+    @AppStorage("dogEyeCenterX") private var dogEyeCenterX: Double = 0
+    @AppStorage("dogEyeCenterY") private var dogEyeCenterY: Double = -21
+    @AppStorage("dogEyeSeparation") private var dogEyeSeparation: Double = 26
+    @AppStorage("dogEyeSize") private var dogEyeSize: Double = 10
 
     private let progressColumns = [
         GridItem(.flexible(), spacing: 12),
@@ -159,11 +163,24 @@ struct SettingsView: View {
             )
 
             SettingsToggleRow(
-                icon: "moon.fill",
+                icon: "eye.fill",
                 iconTint: AppColors.cardPurple,
-                title: "Dark Mode",
-                isOn: $darkModeEnabled
+                title: "Eye Tuner",
+                isOn: $dogEyeTunerEnabled
             )
+
+            if dogEyeTunerEnabled {
+                VStack(spacing: 12) {
+                    SettingsSliderRow(title: "Eye Center X", value: $dogEyeCenterX, range: -40...40)
+                    SettingsSliderRow(title: "Eye Center Y", value: $dogEyeCenterY, range: -40...40)
+                    SettingsSliderRow(title: "Eye Separation", value: $dogEyeSeparation, range: 10...60)
+                    SettingsSliderRow(title: "Eye Size", value: $dogEyeSize, range: 4...24)
+                }
+                .padding(12)
+                .background(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 4)
+            }
 
             SettingsLinkRow(
                 icon: "paintpalette.fill",
@@ -320,6 +337,27 @@ private struct SettingsLinkRow: View {
     }
 }
 
+private struct SettingsSliderRow: View {
+    let title: String
+    @Binding var value: Double
+    let range: ClosedRange<Double>
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(AppColors.textPrimary)
+                Spacer()
+                Text(String(format: "%.0f", value))
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+            Slider(value: $value, in: range, step: 1)
+        }
+    }
+}
+
 private struct SettingsEditSheet: View {
     @Environment(\.dismiss) private var dismiss
 
@@ -357,4 +395,11 @@ private struct SettingsEditSheet: View {
             }
         }
     }
+}
+
+#Preview {
+    let preview = PreviewData.make()
+    return SettingsView(pet: preview.pet, appState: preview.appState)
+        .modelContainer(preview.container)
+        .environmentObject(PetReactionController())
 }

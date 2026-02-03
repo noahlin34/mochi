@@ -2,9 +2,12 @@
 
 ## Project Structure & Module Organization
 - `mochi/` contains the app source code.
-- `mochi/ContentView.swift` defines the primary SwiftUI view.
 - `mochi/mochiApp.swift` is the application entry point and configures the SwiftData `ModelContainer`.
-- `mochi/Item.swift` defines the SwiftData model.
+- `mochi/ContentView.swift` composes the root experience and tabs.
+- `mochi/Views/` contains SwiftUI screens and reusable view components (home, habits, pet, store, settings, forms, tab bar).
+- `mochi/Models/` contains SwiftData models and app state (`Habit`, `Pet`, `InventoryItem`, `AppState`, enums).
+- `mochi/Services/` contains game logic and seed data helpers (`GameEngine`, `SeedDataService`).
+- `mochi/Utilities/` contains app-wide helpers (theme, shapes, haptics, reaction controller).
 - `mochi/Assets.xcassets/` holds app icons and color assets.
 - `mochi.xcodeproj/` is the Xcode project configuration.
 

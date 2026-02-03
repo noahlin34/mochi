@@ -47,7 +47,7 @@ struct HomeView: View {
                 .fill(AppColors.cardPurple)
                 .shadow(color: .black.opacity(0.08), radius: 14, x: 0, y: 8)
 
-            RoomBackgroundView(assetName: equippedRoom?.assetName)
+            LandscapeBackgroundView(assetName: equippedRoom?.assetName)
                 .padding(16)
 
             VStack(spacing: 8) {
@@ -119,13 +119,53 @@ struct HomeView: View {
     }
 
     private var petStatusMessage: String {
-        let lowest = min(pet.hunger, pet.cleanliness, pet.mood)
-        if lowest < 35 {
-            if pet.hunger == lowest { return "I\'m a bit hungry." }
-            if pet.cleanliness == lowest { return "I need a bath." }
-            return "I could use a cuddle."
+        let stats = [
+            ("hunger", pet.hunger),
+            ("cleanliness", pet.cleanliness),
+            ("mood", pet.mood)
+        ]
+        let lowest = stats.min { $0.1 < $1.1 }
+
+        guard let (stat, value) = lowest else {
+            return "I feel cozy today."
         }
-        return "I feel cozy today."
+
+        switch value {
+        case ..<20:
+            return urgentMessage(for: stat)
+        case 20..<45:
+            return lowMessage(for: stat)
+        case 45..<75:
+            return "I’m doing okay. Keep me cared for!"
+        default:
+            return "I feel great today!"
+        }
+    }
+
+    private func lowMessage(for stat: String) -> String {
+        switch stat {
+        case "hunger":
+            return "I’m getting hungry."
+        case "cleanliness":
+            return "I need a little clean-up."
+        case "mood":
+            return "I could use a cuddle."
+        default:
+            return "I’m a bit low."
+        }
+    }
+
+    private func urgentMessage(for stat: String) -> String {
+        switch stat {
+        case "hunger":
+            return "I’m really hungry!"
+        case "cleanliness":
+            return "I really need a bath!"
+        case "mood":
+            return "I’m feeling really down."
+        default:
+            return "I need help!"
+        }
     }
 
     private func completeHabit(_ habit: Habit) {
@@ -324,4 +364,11 @@ private struct HabitCardRow: View {
             return "calendar"
         }
     }
+}
+
+#Preview {
+    let preview = PreviewData.make()
+    return HomeView(pet: preview.pet, appState: preview.appState)
+        .modelContainer(preview.container)
+        .environmentObject(PetReactionController())
 }
