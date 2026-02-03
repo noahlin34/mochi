@@ -3,6 +3,7 @@ import SwiftData
 
 struct StoreView: View {
     @EnvironmentObject private var reactionController: PetReactionController
+    @Environment(\.tabBarHeight) private var tabBarHeight
     @Query(sort: \InventoryItem.createdAt) private var items: [InventoryItem]
 
     @Bindable var pet: Pet
@@ -36,7 +37,7 @@ struct StoreView: View {
                     }
                 }
                 .padding(.horizontal, 20)
-                .padding(.bottom, 24)
+                .padding(.bottom, tabBarPadding)
             }
             .background(Color.appBackground)
             .navigationTitle("Shop")
@@ -50,6 +51,10 @@ struct StoreView: View {
         .onChange(of: selectedCategory) { _, _ in
             previewItem = nil
         }
+    }
+
+    private var tabBarPadding: CGFloat {
+        max(tabBarHeight + 16, 96)
     }
 
     private var headerCard: some View {

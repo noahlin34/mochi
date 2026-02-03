@@ -11,6 +11,7 @@ struct ContentView: View {
 
     @StateObject private var reactionController = PetReactionController()
     @State private var selection: AppTab = .home
+    @State private var tabBarHeight: CGFloat = 0
 
     private let engine = GameEngine()
 
@@ -34,16 +35,19 @@ struct ContentView: View {
                 .background(Color.appBackground.ignoresSafeArea())
                 .safeAreaInset(edge: .bottom, spacing: 0) {
                     AppTabBar(selection: $selection)
-                        .padding(.top, 6)
-                        .padding(.bottom, 10)
+                        .padding(.top, 0)
+                        .padding(.bottom, 4)
                         .frame(maxWidth: .infinity)
-                        .background(Color.appBackground)
+                        .trackTabBarHeight { height in
+                            tabBarHeight = height
+                        }
                 }
             } else {
                 ProgressView("Preparing mochi...")
             }
         }
         .environmentObject(reactionController)
+        .environment(\.tabBarHeight, tabBarHeight)
         .task {
             SeedDataService.seedIfNeeded(context: modelContext)
             engine.runResetsIfNeeded(context: modelContext)

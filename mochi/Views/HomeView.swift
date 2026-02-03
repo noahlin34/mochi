@@ -3,6 +3,7 @@ import SwiftData
 
 struct HomeView: View {
     @EnvironmentObject private var reactionController: PetReactionController
+    @Environment(\.tabBarHeight) private var tabBarHeight
     @Query(sort: \Habit.createdAt) private var habits: [Habit]
     @Query(sort: \InventoryItem.createdAt) private var items: [InventoryItem]
 
@@ -24,12 +25,16 @@ struct HomeView: View {
             }
             .padding(.horizontal, 20)
             .padding(.top, 8)
-            .padding(.bottom, 32)
+            .padding(.bottom, tabBarPadding)
         }
         .background(Color.appBackground)
         .onChange(of: reactionController.pulse) { _ in
             triggerBounce()
         }
+    }
+
+    private var tabBarPadding: CGFloat {
+        max(tabBarHeight + 16, 96)
     }
 
     private var statusRow: some View {

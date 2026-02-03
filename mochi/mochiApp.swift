@@ -1,8 +1,14 @@
 import SwiftUI
 import SwiftData
+import UIKit
 
 @main
 struct MochiApp: App {
+    init() {
+        // Ensure the system tab bar never shows behind the custom one.
+        UITabBar.appearance().isHidden = true
+    }
+
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Habit.self,

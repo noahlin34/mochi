@@ -4,6 +4,7 @@ import SwiftData
 struct HabitsView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var reactionController: PetReactionController
+    @Environment(\.tabBarHeight) private var tabBarHeight
     @Query(sort: \Habit.createdAt) private var habits: [Habit]
 
     @Bindable var pet: Pet
@@ -42,7 +43,7 @@ struct HabitsView: View {
                     }
                 }
                 .padding(.horizontal, 20)
-                .padding(.bottom, 24)
+                .padding(.bottom, tabBarPadding)
             }
             .background(Color.appBackground)
             .navigationTitle("Habits")
@@ -63,6 +64,10 @@ struct HabitsView: View {
         .onChange(of: reactionController.pulse) { _ in
             triggerBounce()
         }
+    }
+
+    private var tabBarPadding: CGFloat {
+        max(tabBarHeight + 16, 96)
     }
 
     private var headerCard: some View {

@@ -3,6 +3,7 @@ import SwiftData
 
 struct SettingsView: View {
     @Query(sort: \Habit.createdAt) private var habits: [Habit]
+    @Environment(\.tabBarHeight) private var tabBarHeight
 
     @Bindable var pet: Pet
     @Bindable var appState: AppState
@@ -39,7 +40,7 @@ struct SettingsView: View {
                     footerCard
                 }
                 .padding(.horizontal, 20)
-                .padding(.bottom, 24)
+                .padding(.bottom, tabBarPadding)
             }
             .background(Color.appBackground)
             .navigationTitle("Settings")
@@ -255,6 +256,10 @@ struct SettingsView: View {
         let today = Calendar.current.startOfDay(for: Date())
         let components = Calendar.current.dateComponents([.day], from: start, to: today)
         return max(1, (components.day ?? 0) + 1)
+    }
+
+    private var tabBarPadding: CGFloat {
+        max(tabBarHeight + 16, 96)
     }
 }
 
