@@ -38,6 +38,7 @@ enum SeedDataService {
         let demoHabits = [
             Habit(title: "Drink water", scheduleType: .daily),
             Habit(title: "Walk 10 min", scheduleType: .xTimesPerWeek, targetPerWeek: 3),
+            Habit(title: "Stretch breaks", scheduleType: .xTimesPerDay, targetPerDay: 2),
             Habit(title: "Read 5 pages", scheduleType: .daily)
         ]
         demoHabits.forEach { context.insert($0) }

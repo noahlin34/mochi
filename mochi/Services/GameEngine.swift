@@ -22,26 +22,41 @@ final class GameEngine {
         self.dateProvider = dateProvider
     }
 
-    func completeHabit(_ habit: Habit, pet: Pet, appState: AppState? = nil) {
+    @discardableResult
+    func completeHabit(_ habit: Habit, pet: Pet, appState: AppState? = nil) -> Bool {
         let now = dateProvider()
-        habit.completedCountToday += 1
-        habit.completedThisWeek += 1
-        habit.lastCompletedDate = now
+        let rewardEarned: Bool
 
-        pet.coins += Self.habitReward.coins
-        pet.xp += Self.habitReward.xp
-        pet.level = GameLogic.levelForXP(pet.xp)
-        pet.mood = GameLogic.clamp(pet.mood + Self.habitReward.mood)
-        pet.hunger = GameLogic.clamp(pet.hunger + Self.habitReward.hunger)
-        pet.cleanliness = GameLogic.clamp(pet.cleanliness + Self.habitReward.cleanliness)
+        switch habit.scheduleType {
+        case .daily:
+            guard habit.completedCountToday < 1 else { return false }
+            habit.completedCountToday += 1
+            habit.completedThisWeek += 1
+            rewardEarned = true
 
-        if let appState {
-            let startOfToday = calendar.startOfDay(for: now)
-            let lastDailyReset = calendar.startOfDay(for: appState.lastDailyReset)
-            if startOfToday == lastDailyReset, appState.currentStreak == 0 {
-                appState.currentStreak = 1
-            }
+        case .weekly:
+            guard habit.completedThisWeek < 1 else { return false }
+            habit.completedThisWeek += 1
+            habit.completedCountToday += 1
+            rewardEarned = true
+
+        case .xTimesPerDay:
+            habit.completedCountToday += 1
+            habit.completedThisWeek += 1
+            rewardEarned = habit.completedCountToday == habit.targetForSchedule
+
+        case .xTimesPerWeek:
+            habit.completedThisWeek += 1
+            habit.completedCountToday += 1
+            rewardEarned = habit.completedThisWeek == habit.targetForSchedule
         }
+
+        guard rewardEarned else { return false }
+
+        habit.lastCompletedDate = now
+        applyReward(to: pet)
+        updateStreakIfNeeded(appState: appState, on: now)
+        return true
     }
 
     // Applies daily decay and weekly counters based on calendar boundaries.
@@ -99,6 +114,24 @@ final class GameEngine {
     private func fetchAll<T: PersistentModel>(_ type: T.Type, context: ModelContext) -> [T] {
         let descriptor = FetchDescriptor<T>()
         return (try? context.fetch(descriptor)) ?? []
+    }
+
+    private func applyReward(to pet: Pet) {
+        pet.coins += Self.habitReward.coins
+        pet.xp += Self.habitReward.xp
+        pet.level = GameLogic.levelForXP(pet.xp)
+        pet.mood = GameLogic.clamp(pet.mood + Self.habitReward.mood)
+        pet.hunger = GameLogic.clamp(pet.hunger + Self.habitReward.hunger)
+        pet.cleanliness = GameLogic.clamp(pet.cleanliness + Self.habitReward.cleanliness)
+    }
+
+    private func updateStreakIfNeeded(appState: AppState?, on date: Date) {
+        guard let appState else { return }
+        let startOfToday = calendar.startOfDay(for: date)
+        let lastDailyReset = calendar.startOfDay(for: appState.lastDailyReset)
+        if startOfToday == lastDailyReset, appState.currentStreak == 0 {
+            appState.currentStreak = 1
+        }
     }
 }
 

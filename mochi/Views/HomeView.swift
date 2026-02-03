@@ -169,9 +169,11 @@ struct HomeView: View {
     }
 
     private func completeHabit(_ habit: Habit) {
-        engine.completeHabit(habit, pet: pet, appState: appState)
-        reactionController.trigger()
-        Haptics.success()
+        let rewarded = engine.completeHabit(habit, pet: pet, appState: appState)
+        if rewarded {
+            reactionController.trigger()
+            Haptics.success()
+        }
     }
 
     private func triggerBounce() {
@@ -331,28 +333,43 @@ private struct HabitCardRow: View {
             Button {
                 onComplete()
             } label: {
-                Image(systemName: completedToday ? "checkmark.circle.fill" : "circle")
+                Image(systemName: isGoalMet ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 22))
-                    .foregroundStyle(completedToday ? AppColors.accentPurple : .white)
+                    .foregroundStyle(isGoalMet ? AppColors.accentPurple : .white)
             }
             .buttonStyle(.plain)
+            .disabled(isCompletionLocked)
         }
         .padding(14)
         .background(cardColor)
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
-    private var completedToday: Bool {
-        habit.completedCountToday > 0
+    private var isGoalMet: Bool {
+        habit.isGoalMetForSchedule
+    }
+
+    private var isCompletionLocked: Bool {
+        switch habit.scheduleType {
+        case .daily, .weekly:
+            return habit.isGoalMetForSchedule
+        case .xTimesPerDay, .xTimesPerWeek:
+            return false
+        }
     }
 
     private var subtitleText: String {
         switch habit.scheduleType {
         case .daily:
-            return "Daily · Today \(habit.completedCountToday)"
+            return "Daily · \(habit.completedCountToday)/1"
+        case .weekly:
+            return "Weekly · \(habit.completedThisWeek)/1"
+        case .xTimesPerDay:
+            let target = habit.targetForSchedule
+            return "\(target)x per day · \(habit.completedCountToday)/\(target)"
         case .xTimesPerWeek:
-            let target = habit.targetPerWeek ?? 0
-            return "\(target)x per week · \(habit.completedThisWeek) done"
+            let target = habit.targetForSchedule
+            return "\(target)x per week · \(habit.completedThisWeek)/\(target)"
         }
     }
 
@@ -360,6 +377,10 @@ private struct HabitCardRow: View {
         switch habit.scheduleType {
         case .daily:
             return "sun.max.fill"
+        case .weekly:
+            return "calendar"
+        case .xTimesPerDay:
+            return "repeat"
         case .xTimesPerWeek:
             return "calendar"
         }

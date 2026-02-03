@@ -9,12 +9,14 @@ struct HabitFormView: View {
 
     @State private var title: String
     @State private var scheduleType: ScheduleType
+    @State private var targetPerDay: Int
     @State private var targetPerWeek: Int
 
     init(habit: Habit?) {
         self.habit = habit
         _title = State(initialValue: habit?.title ?? "")
         _scheduleType = State(initialValue: habit?.scheduleType ?? .daily)
+        _targetPerDay = State(initialValue: habit?.targetPerDay ?? 3)
         _targetPerWeek = State(initialValue: habit?.targetPerWeek ?? 3)
     }
 
@@ -32,8 +34,12 @@ struct HabitFormView: View {
                         }
                     }
 
-                    if scheduleType == .xTimesPerWeek {
-                        Stepper("Times per week: \(targetPerWeek)", value: $targetPerWeek, in: 1...14)
+                    if scheduleType.needsDailyTarget {
+                        Stepper("Times per day: \(targetPerDay)", value: $targetPerDay, in: 1...20)
+                    }
+
+                    if scheduleType.needsWeeklyTarget {
+                        Stepper("Times per week: \(targetPerWeek)", value: $targetPerWeek, in: 1...20)
                     }
                 }
             }
@@ -63,11 +69,13 @@ struct HabitFormView: View {
         if let habit {
             habit.title = trimmedTitle
             habit.scheduleType = scheduleType
+            habit.targetPerDay = scheduleType == .xTimesPerDay ? targetPerDay : nil
             habit.targetPerWeek = scheduleType == .xTimesPerWeek ? targetPerWeek : nil
         } else {
             let newHabit = Habit(
                 title: trimmedTitle,
                 scheduleType: scheduleType,
+                targetPerDay: scheduleType == .xTimesPerDay ? targetPerDay : nil,
                 targetPerWeek: scheduleType == .xTimesPerWeek ? targetPerWeek : nil
             )
             modelContext.insert(newHabit)

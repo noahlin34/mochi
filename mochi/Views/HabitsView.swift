@@ -87,9 +87,11 @@ struct HabitsView: View {
     }
 
     private func complete(_ habit: Habit) {
-        engine.completeHabit(habit, pet: pet, appState: appState)
-        reactionController.trigger()
-        Haptics.success()
+        let rewarded = engine.completeHabit(habit, pet: pet, appState: appState)
+        if rewarded {
+            reactionController.trigger()
+            Haptics.success()
+        }
     }
 
     private func deleteHabit(_ habit: Habit) {
@@ -130,14 +132,15 @@ private struct HabitListCard: View {
                 Button {
                     onComplete()
                 } label: {
-                    Text("Complete")
+                    Text(buttonTitle)
                         .font(.caption.weight(.semibold))
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(AppColors.accentPurple)
+                        .background(buttonBackground)
                         .foregroundStyle(.white)
                         .clipShape(Capsule())
                 }
+                .disabled(isCompletionLocked)
             }
 
             HStack {
@@ -169,11 +172,33 @@ private struct HabitListCard: View {
     private var scheduleText: String {
         switch habit.scheduleType {
         case .daily:
-            return "Daily"
+            return "Daily · \(habit.completedCountToday)/1"
+        case .weekly:
+            return "Weekly · \(habit.completedThisWeek)/1"
+        case .xTimesPerDay:
+            let target = habit.targetForSchedule
+            return "\(target)x per day · \(habit.completedCountToday)/\(target)"
         case .xTimesPerWeek:
-            let target = habit.targetPerWeek ?? 0
-            return "\(target)x per week"
+            let target = habit.targetForSchedule
+            return "\(target)x per week · \(habit.completedThisWeek)/\(target)"
         }
+    }
+
+    private var isCompletionLocked: Bool {
+        switch habit.scheduleType {
+        case .daily, .weekly:
+            return habit.isGoalMetForSchedule
+        case .xTimesPerDay, .xTimesPerWeek:
+            return false
+        }
+    }
+
+    private var buttonTitle: String {
+        isCompletionLocked ? "Done" : "Complete"
+    }
+
+    private var buttonBackground: Color {
+        isCompletionLocked ? AppColors.mutedPurple : AppColors.accentPurple
     }
 }
 

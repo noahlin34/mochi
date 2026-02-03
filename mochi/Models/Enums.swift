@@ -2,6 +2,8 @@ import Foundation
 
 enum ScheduleType: String, Codable, CaseIterable, Identifiable {
     case daily
+    case weekly
+    case xTimesPerDay
     case xTimesPerWeek
 
     var id: String { rawValue }
@@ -10,9 +12,29 @@ enum ScheduleType: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .daily:
             return "Daily"
+        case .weekly:
+            return "Weekly"
+        case .xTimesPerDay:
+            return "X times per day"
         case .xTimesPerWeek:
             return "X times per week"
         }
+    }
+
+    var isDailyCounter: Bool {
+        self == .daily || self == .xTimesPerDay
+    }
+
+    var isWeeklyCounter: Bool {
+        self == .weekly || self == .xTimesPerWeek
+    }
+
+    var needsDailyTarget: Bool {
+        self == .xTimesPerDay
+    }
+
+    var needsWeeklyTarget: Bool {
+        self == .xTimesPerWeek
     }
 }
 

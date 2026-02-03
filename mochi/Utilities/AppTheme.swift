@@ -7,6 +7,7 @@ enum AppColors {
     static let cardYellow = Color(red: 0.99, green: 0.93, blue: 0.74)
     static let cardPeach = Color(red: 0.99, green: 0.87, blue: 0.80)
     static let accentPurple = Color(red: 0.53, green: 0.32, blue: 0.76)
+    static let mutedPurple = Color(red: 0.72, green: 0.62, blue: 0.82)
     static let accentPeach = Color(red: 0.94, green: 0.55, blue: 0.42)
     static let textPrimary = Color(red: 0.20, green: 0.18, blue: 0.24)
     static let progressTrack = Color.black.opacity(0.08)

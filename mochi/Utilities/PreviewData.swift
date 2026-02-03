@@ -41,6 +41,7 @@ enum PreviewData {
         let habits = [
             Habit(title: "Drink water", scheduleType: .daily, completedCountToday: 1, completedThisWeek: 4),
             Habit(title: "Walk 10 min", scheduleType: .xTimesPerWeek, targetPerWeek: 3, completedCountToday: 0, completedThisWeek: 2),
+            Habit(title: "Stretch breaks", scheduleType: .xTimesPerDay, targetPerDay: 2, completedCountToday: 1, completedThisWeek: 6),
             Habit(title: "Read 5 pages", scheduleType: .daily, completedCountToday: 0, completedThisWeek: 3)
         ]
         habits.forEach { context.insert($0) }
