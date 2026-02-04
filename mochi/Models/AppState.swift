@@ -8,6 +8,7 @@ final class AppState {
     var selectedPetSpecies: PetSpecies
     var tutorialSeen: Bool
     var userName: String
+    var lastStreakBonusDate: Date?
     var currentStreak: Int
     var createdAt: Date
 
@@ -17,6 +18,7 @@ final class AppState {
         selectedPetSpecies: PetSpecies = .cat,
         tutorialSeen: Bool = false,
         userName: String = "",
+        lastStreakBonusDate: Date? = nil,
         currentStreak: Int = 0,
         createdAt: Date = Date()
     ) {
@@ -25,6 +27,7 @@ final class AppState {
         self.selectedPetSpecies = selectedPetSpecies
         self.tutorialSeen = tutorialSeen
         self.userName = userName
+        self.lastStreakBonusDate = lastStreakBonusDate
         self.currentStreak = currentStreak
         self.createdAt = createdAt
     }

@@ -92,10 +92,30 @@ struct HabitsView: View {
     }
 
     private func complete(_ habit: Habit) {
-        let rewarded = engine.completeHabit(habit, pet: pet, appState: appState)
-        if rewarded {
+        let previousCoins = pet.coins
+        let previousEnergy = pet.energy
+        let previousHunger = pet.hunger
+        let previousCleanliness = pet.cleanliness
+        let completed = engine.completeHabit(habit, pet: pet, appState: appState)
+        if completed {
             reactionController.trigger()
             Haptics.success()
+            let delta = pet.coins - previousCoins
+            if delta > 0 {
+                reactionController.triggerCoins(amount: delta)
+            }
+            let energyDelta = pet.energy - previousEnergy
+            let hungerDelta = pet.hunger - previousHunger
+            let cleanlinessDelta = pet.cleanliness - previousCleanliness
+            if energyDelta > 0 {
+                reactionController.triggerStatBurst(kind: .energy, amount: energyDelta)
+            }
+            if hungerDelta > 0 {
+                reactionController.triggerStatBurst(kind: .hunger, amount: hungerDelta)
+            }
+            if cleanlinessDelta > 0 {
+                reactionController.triggerStatBurst(kind: .cleanliness, amount: cleanlinessDelta)
+            }
         }
     }
 
@@ -191,10 +211,8 @@ private struct HabitListCard: View {
 
     private var isCompletionLocked: Bool {
         switch habit.scheduleType {
-        case .daily, .weekly:
+        case .daily, .weekly, .xTimesPerDay, .xTimesPerWeek:
             return habit.isGoalMetForSchedule
-        case .xTimesPerDay, .xTimesPerWeek:
-            return false
         }
     }
 

@@ -14,10 +14,10 @@ struct TutorialView: View {
         [
             TutorialStep(
                 title: "Home",
-                message: "Check your pet’s mood, hunger, and cleanliness. Tap “Complete” to care for them.",
+                message: "Check your pet’s energy, hunger, and cleanliness. Tap “Complete” to care for them.",
                 icon: "house.fill",
                 tint: AppColors.cardPeach,
-                tip: "Tip: mood bars show what needs attention."
+                tip: "Tip: energy bars show what needs attention."
             ),
             TutorialStep(
                 title: "Habits",

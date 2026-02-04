@@ -39,7 +39,7 @@ struct HomeView: View {
 
     private var statusRow: some View {
         HStack(spacing: 12) {
-            StatCapsule(icon: "heart.fill", value: pet.mood, tint: AppColors.accentPeach)
+            StatCapsule(icon: "heart.fill", value: wellnessScore, tint: AppColors.accentPeach)
                 .frame(maxWidth: .infinity)
 
             CoinsPill(coins: pet.coins)
@@ -69,7 +69,7 @@ struct HomeView: View {
 
     private var statsRow: some View {
         HStack(spacing: 12) {
-            StatMiniCard(title: "Mood", value: pet.mood, tint: AppColors.accentPeach, icon: "face.smiling")
+            StatMiniCard(title: "Energy", value: pet.energy, tint: AppColors.accentPeach, icon: "bolt.fill")
             StatMiniCard(title: "Hunger", value: pet.hunger, tint: .orange, icon: "fork.knife")
             StatMiniCard(title: "Clean", value: pet.cleanliness, tint: .blue, icon: "sparkles")
         }
@@ -131,7 +131,7 @@ struct HomeView: View {
         let stats = [
             ("hunger", pet.hunger),
             ("cleanliness", pet.cleanliness),
-            ("mood", pet.mood)
+            ("energy", pet.energy)
         ]
         let lowest = stats.min { $0.1 < $1.1 }
 
@@ -157,8 +157,8 @@ struct HomeView: View {
             return "I’m getting hungry."
         case "cleanliness":
             return "I need a little clean-up."
-        case "mood":
-            return "I could use a cuddle."
+        case "energy":
+            return "I’m feeling a bit tired."
         default:
             return "I’m a bit low."
         }
@@ -170,18 +170,43 @@ struct HomeView: View {
             return "I’m really hungry!"
         case "cleanliness":
             return "I really need a bath!"
-        case "mood":
-            return "I’m feeling really down."
+        case "energy":
+            return "I’m running out of energy!"
         default:
             return "I need help!"
         }
     }
 
+    private var wellnessScore: Int {
+        let total = pet.energy + pet.hunger + pet.cleanliness
+        return max(0, min(100, total / 3))
+    }
+
     private func completeHabit(_ habit: Habit) {
-        let rewarded = engine.completeHabit(habit, pet: pet, appState: appState)
-        if rewarded {
+        let previousCoins = pet.coins
+        let previousEnergy = pet.energy
+        let previousHunger = pet.hunger
+        let previousCleanliness = pet.cleanliness
+        let completed = engine.completeHabit(habit, pet: pet, appState: appState)
+        if completed {
             reactionController.trigger()
             Haptics.success()
+            let delta = pet.coins - previousCoins
+            if delta > 0 {
+                reactionController.triggerCoins(amount: delta)
+            }
+            let energyDelta = pet.energy - previousEnergy
+            let hungerDelta = pet.hunger - previousHunger
+            let cleanlinessDelta = pet.cleanliness - previousCleanliness
+            if energyDelta > 0 {
+                reactionController.triggerStatBurst(kind: .energy, amount: energyDelta)
+            }
+            if hungerDelta > 0 {
+                reactionController.triggerStatBurst(kind: .hunger, amount: hungerDelta)
+            }
+            if cleanlinessDelta > 0 {
+                reactionController.triggerStatBurst(kind: .cleanliness, amount: cleanlinessDelta)
+            }
         }
     }
 
@@ -360,10 +385,8 @@ private struct HabitCardRow: View {
 
     private var isCompletionLocked: Bool {
         switch habit.scheduleType {
-        case .daily, .weekly:
+        case .daily, .weekly, .xTimesPerDay, .xTimesPerWeek:
             return habit.isGoalMetForSchedule
-        case .xTimesPerDay, .xTimesPerWeek:
-            return false
         }
     }
 

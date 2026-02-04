@@ -13,6 +13,7 @@ struct SettingsView: View {
     @State private var showSupportAlert = false
 
     @AppStorage("notificationsEnabled") private var notificationsEnabled = true
+    @AppStorage("developerPanelEnabled") private var developerPanelEnabled = false
     @AppStorage("dogEyeTunerEnabled") private var dogEyeTunerEnabled = false
     @AppStorage("dogEyeCenterX") private var dogEyeCenterX: Double = 0
     @AppStorage("dogEyeCenterY") private var dogEyeCenterY: Double = -21
@@ -37,6 +38,7 @@ struct SettingsView: View {
                     profileCard
                     progressSection
                     preferencesSection
+                    developerSection
                     footerCard
                 }
                 .padding(.horizontal, 20)
@@ -226,6 +228,34 @@ struct SettingsView: View {
         }
     }
 
+    private var developerSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Developer")
+                .font(.headline)
+                .foregroundStyle(AppColors.textPrimary)
+
+            SettingsToggleRow(
+                icon: "wrench.fill",
+                iconTint: AppColors.cardPurple,
+                title: "Developer Panel",
+                isOn: $developerPanelEnabled
+            )
+
+            if developerPanelEnabled {
+                VStack(spacing: 12) {
+                    DeveloperSliderRow(title: "Energy", value: intBinding(\.energy), range: 0...100)
+                    DeveloperSliderRow(title: "Hunger", value: intBinding(\.hunger), range: 0...100)
+                    DeveloperSliderRow(title: "Cleanliness", value: intBinding(\.cleanliness), range: 0...100)
+                    DeveloperSliderRow(title: "Coins", value: intBinding(\.coins), range: 0...5000)
+                }
+                .padding(12)
+                .background(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 4)
+            }
+        }
+    }
+
     private var footerCard: some View {
         VStack(spacing: 10) {
             Image(systemName: "leaf.fill")
@@ -260,6 +290,15 @@ struct SettingsView: View {
 
     private var tabBarPadding: CGFloat {
         max(tabBarHeight + 16, 96)
+    }
+
+    private func intBinding(_ keyPath: ReferenceWritableKeyPath<Pet, Int>) -> Binding<Double> {
+        Binding<Double>(
+            get: { Double(pet[keyPath: keyPath]) },
+            set: { newValue in
+                pet[keyPath: keyPath] = Int(newValue.rounded())
+            }
+        )
     }
 }
 
@@ -368,6 +407,27 @@ private struct SettingsLinkRow: View {
 }
 
 private struct SettingsSliderRow: View {
+    let title: String
+    @Binding var value: Double
+    let range: ClosedRange<Double>
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(AppColors.textPrimary)
+                Spacer()
+                Text(String(format: "%.0f", value))
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+            Slider(value: $value, in: range, step: 1)
+        }
+    }
+}
+
+private struct DeveloperSliderRow: View {
     let title: String
     @Binding var value: Double
     let range: ClosedRange<Double>

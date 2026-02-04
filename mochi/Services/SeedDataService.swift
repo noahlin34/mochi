@@ -20,6 +20,7 @@ enum SeedDataService {
             selectedPetSpecies: .cat,
             tutorialSeen: false,
             userName: "",
+            lastStreakBonusDate: nil,
             currentStreak: 0
         )
         context.insert(appState)
@@ -27,7 +28,7 @@ enum SeedDataService {
         let pet = Pet(
             name: "Mochi",
             species: .dog,
-            mood: 85,
+            energy: 85,
             hunger: 80,
             cleanliness: 78,
             level: 1,

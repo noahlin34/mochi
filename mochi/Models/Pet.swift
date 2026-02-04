@@ -6,7 +6,7 @@ final class Pet {
     var id: UUID
     var name: String
     var species: PetSpecies
-    var mood: Int
+    var energy: Int
     var hunger: Int
     var cleanliness: Int
     var level: Int
@@ -18,7 +18,7 @@ final class Pet {
         id: UUID = UUID(),
         name: String,
         species: PetSpecies,
-        mood: Int = 80,
+        energy: Int = 80,
         hunger: Int = 80,
         cleanliness: Int = 80,
         level: Int = 1,
@@ -29,7 +29,7 @@ final class Pet {
         self.id = id
         self.name = name
         self.species = species
-        self.mood = mood
+        self.energy = energy
         self.hunger = hunger
         self.cleanliness = cleanliness
         self.level = level

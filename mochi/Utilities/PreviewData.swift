@@ -23,6 +23,7 @@ enum PreviewData {
             selectedPetSpecies: .dog,
             tutorialSeen: true,
             userName: "Noah",
+            lastStreakBonusDate: nil,
             currentStreak: 4
         )
         context.insert(appState)
@@ -30,7 +31,7 @@ enum PreviewData {
         let pet = Pet(
             name: "Mochi",
             species: .dog,
-            mood: 86,
+            energy: 86,
             hunger: 78,
             cleanliness: 84,
             level: 2,

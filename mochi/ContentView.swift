@@ -18,29 +18,43 @@ struct ContentView: View {
     var body: some View {
         Group {
             if let pet = pets.first, let appState = appStates.first {
-                TabView(selection: $selection) {
-                    HomeView(pet: pet, appState: appState)
-                        .tag(AppTab.home)
+                ZStack {
+                    TabView(selection: $selection) {
+                        HomeView(pet: pet, appState: appState)
+                            .tag(AppTab.home)
 
-                    HabitsView(pet: pet, appState: appState)
-                        .tag(AppTab.habits)
+                        HabitsView(pet: pet, appState: appState)
+                            .tag(AppTab.habits)
 
-                    StoreView(pet: pet)
-                        .tag(AppTab.store)
+                        StoreView(pet: pet)
+                            .tag(AppTab.store)
 
-                    SettingsView(pet: pet, appState: appState)
-                        .tag(AppTab.settings)
-                }
-                .toolbar(.hidden, for: .tabBar)
-                .background(Color.appBackground.ignoresSafeArea())
-                .safeAreaInset(edge: .bottom, spacing: 0) {
-                    AppTabBar(selection: $selection)
-                        .padding(.top, 0)
-                        .padding(.bottom, 4)
-                        .frame(maxWidth: .infinity)
-                        .trackTabBarHeight { height in
-                            tabBarHeight = height
+                        SettingsView(pet: pet, appState: appState)
+                            .tag(AppTab.settings)
+                    }
+                    .toolbar(.hidden, for: .tabBar)
+                    .background(Color.appBackground.ignoresSafeArea())
+                    .safeAreaInset(edge: .bottom, spacing: 0) {
+                        AppTabBar(selection: $selection)
+                            .padding(.top, 0)
+                            .padding(.bottom, 4)
+                            .frame(maxWidth: .infinity)
+                            .trackTabBarHeight { height in
+                                tabBarHeight = height
+                            }
+                    }
+
+                    VStack {
+                        HStack {
+                            statBurstStack
+                            Spacer()
+                            coinBurstView
                         }
+                        Spacer()
+                    }
+                    .padding(.top, 12)
+                    .padding(.horizontal, 24)
+                    .allowsHitTesting(false)
                 }
                 .fullScreenCover(
                     isPresented: Binding(
@@ -68,6 +82,26 @@ struct ContentView: View {
         .onChange(of: scenePhase) { phase in
             guard phase == .active else { return }
             engine.runResetsIfNeeded(context: modelContext)
+        }
+    }
+
+    @ViewBuilder
+    private var coinBurstView: some View {
+        if let burst = reactionController.coinBurst {
+            CoinBurstView(amount: burst.amount) {
+                reactionController.clearCoinBurst()
+            }
+            .transition(.opacity)
+            .zIndex(10)
+        }
+    }
+
+    private var statBurstStack: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(reactionController.statBursts) { burst in
+                StatBurstView(burst: burst)
+                    .transition(.opacity)
+            }
         }
     }
 }
