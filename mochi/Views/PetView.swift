@@ -235,9 +235,7 @@ private struct DogStaticPetView: View {
 
     var body: some View {
         ZStack {
-            ChromaKeyedImage(name: imageName)
-                .resizable()
-                .scaledToFit()
+            ChromaKeyedImage(name: imageName, resizable: true, contentMode: .fit)
 
             eyeOverlay
         }
@@ -793,9 +791,7 @@ private struct PenguinStaticPetView: View {
 
     var body: some View {
         ZStack {
-            ChromaKeyedImage(name: imageName)
-                .resizable()
-                .scaledToFit()
+            ChromaKeyedImage(name: imageName, resizable: true, contentMode: .fit)
 
             eyeOverlay
         }
@@ -948,16 +944,14 @@ private struct LionStaticPetView: View {
     @State private var blink = false
     @State private var blinkTask: Task<Void, Never>?
 
-    @AppStorage("lionEyeCenterX") private var eyeCenterXStorage: Double = -6
-    @AppStorage("lionEyeCenterY") private var eyeCenterYStorage: Double = -20
-    @AppStorage("lionEyeSeparation") private var eyeSeparationStorage: Double = 24
+    @AppStorage("lionEyeCenterX") private var eyeCenterXStorage: Double = -8
+    @AppStorage("lionEyeCenterY") private var eyeCenterYStorage: Double = -16
+    @AppStorage("lionEyeSeparation") private var eyeSeparationStorage: Double = 21
     @AppStorage("lionEyeSize") private var eyeSizeStorage: Double = 8
 
     var body: some View {
         ZStack {
-            ChromaKeyedImage(name: imageName)
-                .resizable()
-                .scaledToFit()
+            ChromaKeyedImage(name: imageName, resizable: true, contentMode: .fit)
 
             eyeOverlay
         }
@@ -1073,10 +1067,8 @@ private struct LionVectorPetView: View {
 
 #Preview {
     VStack(spacing: 16) {
-        PetView(species: .dog, outfitSymbol: nil, isBouncing: false)
-        PetView(species: .cat, outfitSymbol: nil, isBouncing: false)
-        PetView(species: .bunny, outfitSymbol: nil, isBouncing: false)
-        PetView(species: .penguin, outfitSymbol: nil, isBouncing: false)
+        PetView(species: .lion, outfitSymbol: nil, isBouncing: false)
+
     }
     .padding()
     .background(Color.appBackground)

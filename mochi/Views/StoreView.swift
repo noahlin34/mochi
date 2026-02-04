@@ -336,9 +336,12 @@ private struct StoreItemCard: View {
         Group {
             if let imageName {
                 ZStack {
-                    ChromaKeyedImage(name: imageName, applyChromaKey: item.type == .outfit)
-                        .resizable()
-                        .scaledToFit()
+                    ChromaKeyedImage(
+                        name: imageName,
+                        applyChromaKey: item.type == .outfit,
+                        resizable: true,
+                        contentMode: .fit
+                    )
                         .padding(8)
 
                     if shouldOverlayEyes(for: imageName) {

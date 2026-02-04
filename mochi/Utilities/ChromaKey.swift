@@ -15,8 +15,8 @@ final class ChromaKeyProcessor {
 
     func image(
         named name: String,
-        keyColor: UIColor = .red,
-        threshold: CGFloat = 0.28,
+        keyColor: UIColor = .green,
+        threshold: CGFloat = 0.5,
         smoothing: CGFloat = 0.08
     ) -> UIImage? {
         let cacheKey = "\(name)_\(threshold)_\(smoothing)" as NSString
@@ -52,7 +52,7 @@ final class ChromaKeyProcessor {
         }
 
         let filter = CIFilter.colorCube()
-        filter.cubeDimension = dimension
+        filter.cubeDimension = Float(dimension)
         filter.cubeData = cubeData
         filter.inputImage = ciImage
 
@@ -105,7 +105,9 @@ final class ChromaKeyProcessor {
             }
         }
 
-        return Data(buffer: UnsafeBufferPointer(start: &cubeData, count: cubeData.count))
+        return cubeData.withUnsafeBufferPointer { buffer in
+            Data(buffer: buffer)
+        }
     }
 
     private func smoothstep(edge0: Float, edge1: Float, x: Float) -> Float {
@@ -118,12 +120,24 @@ final class ChromaKeyProcessor {
 struct ChromaKeyedImage: View {
     let name: String
     var applyChromaKey: Bool = true
+    var resizable: Bool = false
+    var contentMode: ContentMode = .fit
 
     var body: some View {
-        if applyChromaKey, let uiImage = ChromaKeyProcessor.shared.image(named: name) {
-            Image(uiImage: uiImage)
+        let image = baseImage
+        if resizable {
+            image
+                .resizable()
+                .aspectRatio(contentMode: contentMode)
         } else {
-            Image(name)
+            image
         }
+    }
+
+    private var baseImage: Image {
+        if applyChromaKey, let uiImage = ChromaKeyProcessor.shared.image(named: name) {
+            return Image(uiImage: uiImage)
+        }
+        return Image(name)
     }
 }
