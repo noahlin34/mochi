@@ -24,6 +24,11 @@ struct SettingsView: View {
     @AppStorage("penguinEyeCenterY") private var penguinEyeCenterY: Double = -20
     @AppStorage("penguinEyeSeparation") private var penguinEyeSeparation: Double = 20
     @AppStorage("penguinEyeSize") private var penguinEyeSize: Double = 8
+    @AppStorage("lionEyeTunerEnabled") private var lionEyeTunerEnabled = false
+    @AppStorage("lionEyeCenterX") private var lionEyeCenterX: Double = -6
+    @AppStorage("lionEyeCenterY") private var lionEyeCenterY: Double = -20
+    @AppStorage("lionEyeSeparation") private var lionEyeSeparation: Double = 24
+    @AppStorage("lionEyeSize") private var lionEyeSize: Double = 8
 
     private let progressColumns = [
         GridItem(.flexible(), spacing: 12),
@@ -203,6 +208,26 @@ struct SettingsView: View {
                     SettingsSliderRow(title: "Eye Center Y", value: $penguinEyeCenterY, range: -40...40)
                     SettingsSliderRow(title: "Eye Separation", value: $penguinEyeSeparation, range: 10...60)
                     SettingsSliderRow(title: "Eye Size", value: $penguinEyeSize, range: 4...24)
+                }
+                .padding(12)
+                .background(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 4)
+            }
+
+            SettingsToggleRow(
+                icon: "eye.fill",
+                iconTint: AppColors.cardYellow,
+                title: "Lion Eye Tuner",
+                isOn: $lionEyeTunerEnabled
+            )
+
+            if lionEyeTunerEnabled {
+                VStack(spacing: 12) {
+                    SettingsSliderRow(title: "Eye Center X", value: $lionEyeCenterX, range: -40...40)
+                    SettingsSliderRow(title: "Eye Center Y", value: $lionEyeCenterY, range: -40...40)
+                    SettingsSliderRow(title: "Eye Separation", value: $lionEyeSeparation, range: 10...60)
+                    SettingsSliderRow(title: "Eye Size", value: $lionEyeSize, range: 4...24)
                 }
                 .padding(12)
                 .background(.white)

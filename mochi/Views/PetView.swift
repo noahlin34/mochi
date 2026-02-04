@@ -41,6 +41,8 @@ struct PetView: View {
             BunnyPetView(blink: blink)
         case .penguin:
             PenguinPetView(blink: blink, tailWag: tailWag, outfitAssetName: outfitSymbol)
+        case .lion:
+            LionPetView(blink: blink, tailWag: tailWag, outfitAssetName: outfitSymbol)
         }
     }
 
@@ -911,6 +913,161 @@ private struct PenguinVectorPetView: View {
                 .offset(x: 58, y: 8)
         }
         .frame(width: 170, height: 170)
+    }
+}
+
+private struct LionPetView: View {
+    let blink: Bool
+    let tailWag: Bool
+    let outfitAssetName: String?
+
+    var body: some View {
+        if let staticName = resolvedStaticName() {
+            LionStaticPetView(imageName: staticName)
+        } else {
+            LionVectorPetView(blink: blink)
+        }
+    }
+
+    private func resolvedStaticName() -> String? {
+        if let outfitAssetName,
+           UIImage(named: "lion_pet_\(outfitAssetName)") != nil {
+            return "lion_pet_\(outfitAssetName)"
+        }
+        if UIImage(named: "lion_pet") != nil {
+            return "lion_pet"
+        }
+        return nil
+    }
+}
+
+private struct LionStaticPetView: View {
+    let imageName: String
+
+    @State private var breathe = false
+    @State private var blink = false
+    @State private var blinkTask: Task<Void, Never>?
+
+    @AppStorage("lionEyeCenterX") private var eyeCenterXStorage: Double = -6
+    @AppStorage("lionEyeCenterY") private var eyeCenterYStorage: Double = -20
+    @AppStorage("lionEyeSeparation") private var eyeSeparationStorage: Double = 24
+    @AppStorage("lionEyeSize") private var eyeSizeStorage: Double = 8
+
+    var body: some View {
+        ZStack {
+            ChromaKeyedImage(name: imageName)
+                .resizable()
+                .scaledToFit()
+
+            eyeOverlay
+        }
+        .frame(width: 160, height: 160)
+        .scaleEffect(breathe ? 1.02 : 1.0)
+        .rotationEffect(.degrees(breathe ? 0.6 : 0.0))
+        .shadow(color: Color.black.opacity(0.18), radius: breathe ? 8 : 6, x: 0, y: 8)
+        .padding(.top, 6)
+        .onAppear {
+            breathe = false
+            blink = false
+            withAnimation(.easeInOut(duration: 2.4).repeatForever(autoreverses: true)) {
+                breathe = true
+            }
+            blinkTask?.cancel()
+            blinkTask = nil
+            startBlinking()
+        }
+        .onDisappear {
+            blinkTask?.cancel()
+            blinkTask = nil
+        }
+    }
+
+    private var eyeOverlay: some View {
+        let eyeCenterX = CGFloat(eyeCenterXStorage)
+        let eyeCenterY = CGFloat(eyeCenterYStorage)
+        let halfSeparation = CGFloat(eyeSeparationStorage) / 2
+        let eyeSize = CGFloat(eyeSizeStorage)
+
+        return ZStack {
+            Circle()
+                .fill(Color.black.opacity(0.9))
+                .frame(width: eyeSize, height: eyeSize)
+                .offset(x: eyeCenterX - halfSeparation, y: eyeCenterY)
+                .scaleEffect(x: 1.0, y: blink ? 0.6 : 1.0, anchor: .center)
+
+            Circle()
+                .fill(Color.black.opacity(0.9))
+                .frame(width: eyeSize, height: eyeSize)
+                .offset(x: eyeCenterX + halfSeparation, y: eyeCenterY)
+                .scaleEffect(x: 1.0, y: blink ? 0.6 : 1.0, anchor: .center)
+        }
+    }
+
+    private func startBlinking() {
+        guard blinkTask == nil else { return }
+        blinkTask = Task {
+            while !Task.isCancelled {
+                let wait = Double.random(in: 2.4...4.2)
+                try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
+                await MainActor.run {
+                    withAnimation(.easeInOut(duration: 0.12)) {
+                        blink = true
+                    }
+                }
+                try? await Task.sleep(nanoseconds: 120_000_000)
+                await MainActor.run {
+                    withAnimation(.easeOut(duration: 0.14)) {
+                        blink = false
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct LionVectorPetView: View {
+    let blink: Bool
+
+    private let outlineColor = Color(red: 0.30, green: 0.18, blue: 0.12)
+    private let bodyColor = Color(red: 0.96, green: 0.74, blue: 0.32)
+    private let maneColor = Color(red: 0.78, green: 0.48, blue: 0.20)
+    private let muzzleColor = Color(red: 0.99, green: 0.92, blue: 0.82)
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(outlineColor)
+                .frame(width: 130, height: 130)
+            Circle()
+                .fill(maneColor)
+                .frame(width: 120, height: 120)
+            Circle()
+                .fill(bodyColor)
+                .frame(width: 96, height: 96)
+
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(muzzleColor)
+                .frame(width: 48, height: 36)
+                .offset(y: 14)
+
+            Circle()
+                .fill(Color.black.opacity(0.9))
+                .frame(width: 12, height: 12)
+                .offset(x: -18, y: -4)
+                .scaleEffect(y: blink ? 0.6 : 1.0)
+            Circle()
+                .fill(Color.black.opacity(0.9))
+                .frame(width: 12, height: 12)
+                .offset(x: 18, y: -4)
+                .scaleEffect(y: blink ? 0.6 : 1.0)
+
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(Color.black.opacity(0.85))
+                .frame(width: 14, height: 10)
+                .offset(y: 14)
+        }
+        .frame(width: 170, height: 170)
+        .shadow(color: outlineColor.opacity(0.18), radius: 6, x: 0, y: 8)
     }
 }
 

@@ -464,6 +464,8 @@ private struct StaticPetEyes: View {
                 return EyeConfig(centerX: -5, centerY: -21, separation: 22, size: 8)
             case .penguin:
                 return EyeConfig(centerX: -10, centerY: -20, separation: 25, size: 9)
+            case .lion:
+                return EyeConfig(centerX: -6, centerY: -20, separation: 24, size: 8)
             case .cat:
                 return EyeConfig(centerX: 0, centerY: -18, separation: 24, size: 7)
             case .bunny:
