@@ -51,11 +51,16 @@ struct SpriteSheetAnimator: View {
     let fps: Double
     let size: CGSize
     let contentInset: CGFloat
+    var applyChromaKey: Bool = false
 
     @State private var startTime = Date()
 
     var body: some View {
-        if let uiImage = UIImage(named: imageName) {
+        let uiImage = applyChromaKey
+            ? ChromaKeyProcessor.shared.image(named: imageName)
+            : UIImage(named: imageName)
+
+        if let uiImage {
             TimelineView(.animation(minimumInterval: 1.0 / fps)) { timeline in
                 let elapsed = timeline.date.timeIntervalSince(startTime)
                 let index = frameIndex(for: elapsed)

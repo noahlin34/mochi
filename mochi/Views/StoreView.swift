@@ -336,7 +336,7 @@ private struct StoreItemCard: View {
         Group {
             if let imageName {
                 ZStack {
-                    Image(imageName)
+                    ChromaKeyedImage(name: imageName, applyChromaKey: item.type == .outfit)
                         .resizable()
                         .scaledToFit()
                         .padding(8)

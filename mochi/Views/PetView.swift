@@ -233,7 +233,7 @@ private struct DogStaticPetView: View {
 
     var body: some View {
         ZStack {
-            Image(imageName)
+            ChromaKeyedImage(name: imageName)
                 .resizable()
                 .scaledToFit()
 
@@ -322,7 +322,8 @@ private struct DogSpritePetView: View {
             frames: idleFrames,
             fps: fps,
             size: CGSize(width: 150, height: 150),
-            contentInset: spriteInset
+            contentInset: spriteInset,
+            applyChromaKey: true
         )
         .shadow(color: Color.black.opacity(0.15), radius: 6, x: 0, y: 8)
         .padding(.top, 6)
@@ -790,7 +791,7 @@ private struct PenguinStaticPetView: View {
 
     var body: some View {
         ZStack {
-            Image(imageName)
+            ChromaKeyedImage(name: imageName)
                 .resizable()
                 .scaledToFit()
 
