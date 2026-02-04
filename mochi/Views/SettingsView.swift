@@ -101,9 +101,9 @@ struct SettingsView: View {
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(pet.name)
+                Text(appState.userDisplayName)
                     .font(.headline)
-                Text("Cozy Caretaker")
+                Text("Caretaker of \(pet.name)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -457,6 +457,10 @@ private struct SettingsEditSheet: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section("User") {
+                    TextField("Your name", text: $appState.userName)
+                }
+
                 Section("Pet") {
                     TextField("Name", text: $pet.name)
                     Picker("Species", selection: $appState.selectedPetSpecies) {
