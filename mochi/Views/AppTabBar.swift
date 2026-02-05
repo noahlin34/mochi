@@ -34,7 +34,10 @@ struct AppTabBar: View {
         HStack(spacing: 20) {
             ForEach(AppTab.allCases) { tab in
                 Button {
-                    selection = tab
+                    if selection != tab {
+                        selection = tab
+                        Haptics.light()
+                    }
                 } label: {
                     VStack(spacing: 6) {
                         Image(systemName: tab.systemImage)
