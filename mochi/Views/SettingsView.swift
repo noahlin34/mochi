@@ -13,7 +13,7 @@ struct SettingsView: View {
     @State private var showSupportAlert = false
     @State private var showNotificationsAlert = false
 
-    @AppStorage("notificationsEnabled") private var notificationsEnabled = true
+    @AppStorage("notificationsEnabled") private var notificationsEnabled = false
     @AppStorage("reminderHour") private var reminderHour: Int = 9
     @AppStorage("reminderMinute") private var reminderMinute: Int = 0
     @AppStorage("developerPanelEnabled") private var developerPanelEnabled = false

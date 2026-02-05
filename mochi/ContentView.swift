@@ -13,7 +13,7 @@ struct ContentView: View {
     @State private var selection: AppTab = .home
     @State private var tabBarHeight: CGFloat = 0
 
-    @AppStorage("notificationsEnabled") private var notificationsEnabled = true
+    @AppStorage("notificationsEnabled") private var notificationsEnabled = false
     @AppStorage("reminderHour") private var reminderHour: Int = 9
     @AppStorage("reminderMinute") private var reminderMinute: Int = 0
 

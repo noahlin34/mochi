@@ -4,6 +4,12 @@ import UserNotifications
 enum NotificationManager {
     static let dailyReminderIdentifier = "daily_habit_reminder"
 
+    static func authorizationStatus() async -> UNAuthorizationStatus {
+        let center = UNUserNotificationCenter.current()
+        let settings = await center.notificationSettings()
+        return settings.authorizationStatus
+    }
+
     static func updateDailyReminder(enabled: Bool, hour: Int, minute: Int) async {
         if enabled {
             await scheduleDailyReminder(hour: hour, minute: minute)

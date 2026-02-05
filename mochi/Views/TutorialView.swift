@@ -7,7 +7,7 @@ struct TutorialView: View {
     @Bindable var pet: Pet
     @Bindable var appState: AppState
 
-    @AppStorage("notificationsEnabled") private var notificationsEnabled = true
+    @AppStorage("notificationsEnabled") private var notificationsEnabled = false
     @AppStorage("reminderHour") private var reminderHour: Int = 9
     @AppStorage("reminderMinute") private var reminderMinute: Int = 0
 
@@ -93,6 +93,22 @@ struct TutorialView: View {
         .onAppear {
             if nameInput.isEmpty {
                 nameInput = appState.userName
+            }
+            Task {
+                let status = await NotificationManager.authorizationStatus()
+                await MainActor.run {
+                    switch status {
+                    case .authorized, .provisional, .ephemeral:
+                        break
+                    case .denied:
+                        notificationsEnabled = false
+                        notificationsDenied = true
+                    case .notDetermined:
+                        notificationsEnabled = false
+                    @unknown default:
+                        notificationsEnabled = false
+                    }
+                }
             }
         }
     }
