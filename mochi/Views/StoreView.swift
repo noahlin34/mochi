@@ -24,7 +24,9 @@ struct StoreView: View {
                     headerCard
                     petPreviewCard
                     categoryPill
-                    availabilityToggle
+                    if selectedCategory == .outfits {
+                        availabilityToggle
+                    }
                     LazyVGrid(columns: columns, spacing: 16) {
                         ForEach(Array(filteredItems.enumerated()), id: \.element.id) { index, item in
                             StoreItemCard(
@@ -100,7 +102,9 @@ struct StoreView: View {
         HStack(spacing: 6) {
             ForEach(StoreCategory.allCases) { category in
                 Button {
+                    guard selectedCategory != category else { return }
                     selectedCategory = category
+                    Haptics.light()
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: category.icon)

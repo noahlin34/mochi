@@ -72,7 +72,7 @@ struct HomeView: View {
         HStack(spacing: 12) {
             StatMiniCard(title: "Energy", value: pet.energy, tint: AppColors.accentPeach, icon: "bolt.fill")
             StatMiniCard(title: "Hunger", value: pet.hunger, tint: .orange, icon: "fork.knife")
-            StatMiniCard(title: "Clean", value: pet.cleanliness, tint: .blue, icon: "sparkles")
+            StatMiniCard(title: "Cleanliness", value: pet.cleanliness, tint: .blue, icon: "sparkles")
         }
     }
 
