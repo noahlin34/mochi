@@ -7,8 +7,14 @@ struct TutorialView: View {
     @Bindable var pet: Pet
     @Bindable var appState: AppState
 
+    @AppStorage("notificationsEnabled") private var notificationsEnabled = true
+    @AppStorage("reminderHour") private var reminderHour: Int = 9
+    @AppStorage("reminderMinute") private var reminderMinute: Int = 0
+
     @State private var stepIndex = 0
     @State private var nameInput = ""
+    @State private var notificationsDenied = false
+    @State private var isRequestingNotifications = false
 
     private var steps: [TutorialStep] {
         [
@@ -39,6 +45,13 @@ struct TutorialView: View {
                 icon: "gearshape.fill",
                 tint: AppColors.cardPurple,
                 tip: "You can revisit this tutorial anytime here."
+            ),
+            TutorialStep(
+                title: "Reminders",
+                message: "Turn on notifications so we can nudge you when it’s habit time.",
+                icon: "bell.fill",
+                tint: AppColors.cardGreen,
+                tip: "You can change the reminder time in Settings."
             )
         ]
     }
@@ -62,6 +75,9 @@ struct TutorialView: View {
 
                 if stepIndex == 0 {
                     nameStepCard
+                        .padding(.horizontal, 24)
+                } else if isNotificationsStep {
+                    notificationsStepCard
                         .padding(.horizontal, 24)
                 } else {
                     TutorialCard(step: steps[stepIndex - 1])
@@ -163,6 +179,8 @@ struct TutorialView: View {
             StoreView(pet: pet)
         case 4:
             SettingsView(pet: pet, appState: appState)
+        case 5:
+            SettingsView(pet: pet, appState: appState)
         default:
             EmptyView()
         }
@@ -170,6 +188,10 @@ struct TutorialView: View {
 
     private var nameInputTrimmed: String {
         nameInput.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var isNotificationsStep: Bool {
+        stepIndex > 0 && steps[stepIndex - 1].title == "Reminders"
     }
 
     private var nameStepCard: some View {
@@ -211,6 +233,88 @@ struct TutorialView: View {
         .background(.white)
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .shadow(color: .black.opacity(0.06), radius: 12, x: 0, y: 6)
+    }
+
+    private var notificationsStepCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 12) {
+                Circle()
+                    .fill(AppColors.cardGreen.opacity(0.6))
+                    .frame(width: 52, height: 52)
+                    .overlay(
+                        Image(systemName: "bell.fill")
+                            .font(.system(size: 22, weight: .semibold))
+                            .foregroundStyle(AppColors.accentPurple)
+                    )
+
+                Text("Reminders")
+                    .font(.headline)
+                    .foregroundStyle(AppColors.textPrimary)
+            }
+
+            Text("Allow notifications to get a gentle daily reminder at \(reminderTimeString).")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            if notificationsDenied {
+                Text("Notifications are off. Enable them in iOS Settings to receive reminders.")
+                    .font(.caption)
+                    .foregroundStyle(AppColors.accentPeach)
+            }
+
+            Button {
+                enableNotificationsFromTutorial()
+            } label: {
+                HStack(spacing: 8) {
+                    if isRequestingNotifications {
+                        ProgressView()
+                            .tint(.white)
+                    }
+                    Text(notificationsEnabled ? "Notifications Enabled" : "Enable Reminders")
+                        .font(.subheadline.weight(.semibold))
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(notificationsEnabled ? AppColors.mutedPurple.opacity(0.4) : AppColors.accentPurple)
+                .foregroundStyle(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            }
+            .disabled(notificationsEnabled || isRequestingNotifications)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.white)
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .shadow(color: .black.opacity(0.06), radius: 12, x: 0, y: 6)
+    }
+
+    private var reminderTimeString: String {
+        var components = DateComponents()
+        components.hour = reminderHour
+        components.minute = reminderMinute
+        let date = Calendar.current.date(from: components) ?? Date()
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
+
+    private func enableNotificationsFromTutorial() {
+        isRequestingNotifications = true
+        Task {
+            let granted = await NotificationManager.requestAuthorizationIfNeeded()
+            await MainActor.run {
+                notificationsEnabled = granted
+                notificationsDenied = !granted
+                isRequestingNotifications = false
+            }
+            if granted {
+                await NotificationManager.updateDailyReminder(
+                    enabled: true,
+                    hour: reminderHour,
+                    minute: reminderMinute
+                )
+            }
+        }
     }
 }
 

@@ -99,7 +99,6 @@ struct HabitsView: View {
         let completed = engine.completeHabit(habit, pet: pet, appState: appState)
         if completed {
             reactionController.trigger()
-            Haptics.success()
             let delta = pet.coins - previousCoins
             if delta > 0 {
                 reactionController.triggerCoins(amount: delta)

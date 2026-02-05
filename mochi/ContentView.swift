@@ -79,6 +79,16 @@ struct ContentView: View {
         }
         .environmentObject(reactionController)
         .environment(\.tabBarHeight, tabBarHeight)
+        .onChange(of: reactionController.coinBurst) { _, newValue in
+            if newValue != nil {
+                Haptics.success()
+            }
+        }
+        .onChange(of: reactionController.statBursts.count) { oldValue, newValue in
+            if newValue > oldValue {
+                Haptics.light()
+            }
+        }
         .task {
             SeedDataService.seedIfNeeded(context: modelContext)
             engine.runResetsIfNeeded(context: modelContext)

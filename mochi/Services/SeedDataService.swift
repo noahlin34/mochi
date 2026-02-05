@@ -51,7 +51,7 @@ enum SeedDataService {
             InventoryItem(type: .room, name: "Cozy Home", price: 40, owned: false, equipped: false, assetName: "house"),
             InventoryItem(type: .room, name: "Beach Resort", price: 55, owned: false, equipped: false, assetName: "beach"),
             InventoryItem(type: .room, name: "Dreamy Bed", price: 70, owned: false, equipped: false, assetName: "bed.double"),
-            InventoryItem(type: .room, name: "Ice Igloo", price: 65, owned: false, equipped: false, assetName: "igloo")
+            InventoryItem(type: .room, name: "Igloo Village", price: 65, owned: false, equipped: false, assetName: "igloo")
         ]
         catalog.forEach { context.insert($0) }
     }
