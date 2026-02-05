@@ -11,8 +11,11 @@ struct SettingsView: View {
     @State private var showEditSheet = false
     @State private var showAppearanceAlert = false
     @State private var showSupportAlert = false
+    @State private var showNotificationsAlert = false
 
     @AppStorage("notificationsEnabled") private var notificationsEnabled = true
+    @AppStorage("reminderHour") private var reminderHour: Int = 9
+    @AppStorage("reminderMinute") private var reminderMinute: Int = 0
     @AppStorage("developerPanelEnabled") private var developerPanelEnabled = false
     @AppStorage("dogEyeTunerEnabled") private var dogEyeTunerEnabled = false
     @AppStorage("dogEyeCenterX") private var dogEyeCenterX: Double = 0
@@ -60,6 +63,11 @@ struct SettingsView: View {
             }
             .sheet(isPresented: $showEditSheet) {
                 SettingsEditSheet(pet: pet, appState: appState)
+            }
+            .alert("Notifications Disabled", isPresented: $showNotificationsAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text("Enable notifications in Settings to receive daily habit reminders.")
             }
             .alert("Coming Soon", isPresented: $showAppearanceAlert) {
                 Button("OK", role: .cancel) { }
@@ -174,6 +182,31 @@ struct SettingsView: View {
                 title: "Notifications",
                 isOn: $notificationsEnabled
             )
+            .onChange(of: notificationsEnabled) { _, isOn in
+                Task {
+                    if isOn {
+                        let granted = await NotificationManager.requestAuthorizationIfNeeded()
+                        if !granted {
+                            await MainActor.run {
+                                notificationsEnabled = false
+                                showNotificationsAlert = true
+                            }
+                            await NotificationManager.cancelDailyReminder()
+                            return
+                        }
+                    }
+
+                    await NotificationManager.updateDailyReminder(
+                        enabled: isOn,
+                        hour: reminderHour,
+                        minute: reminderMinute
+                    )
+                }
+            }
+
+            if notificationsEnabled {
+                SettingsTimeRow(title: "Reminder Time", selection: reminderDateBinding)
+            }
 
             SettingsToggleRow(
                 icon: "eye.fill",
@@ -317,6 +350,29 @@ struct SettingsView: View {
         max(tabBarHeight + 16, 96)
     }
 
+    private var reminderDateBinding: Binding<Date> {
+        Binding<Date>(
+            get: {
+                var components = Calendar.current.dateComponents([.year, .month, .day], from: Date())
+                components.hour = reminderHour
+                components.minute = reminderMinute
+                return Calendar.current.date(from: components) ?? Date()
+            },
+            set: { newValue in
+                let components = Calendar.current.dateComponents([.hour, .minute], from: newValue)
+                reminderHour = components.hour ?? 9
+                reminderMinute = components.minute ?? 0
+                Task {
+                    await NotificationManager.updateDailyReminder(
+                        enabled: notificationsEnabled,
+                        hour: reminderHour,
+                        minute: reminderMinute
+                    )
+                }
+            }
+        )
+    }
+
     private func intBinding(_ keyPath: ReferenceWritableKeyPath<Pet, Int>) -> Binding<Double> {
         Binding<Double>(
             get: { Double(pet[keyPath: keyPath]) },
@@ -384,6 +440,37 @@ private struct SettingsToggleRow: View {
             Spacer()
 
             Toggle("", isOn: $isOn)
+                .labelsHidden()
+        }
+        .padding(12)
+        .background(.white)
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 4)
+    }
+}
+
+private struct SettingsTimeRow: View {
+    let title: String
+    @Binding var selection: Date
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Circle()
+                .fill(AppColors.cardYellow.opacity(0.5))
+                .frame(width: 40, height: 40)
+                .overlay(
+                    Image(systemName: "clock.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(AppColors.accentPurple)
+                )
+
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(AppColors.textPrimary)
+
+            Spacer()
+
+            DatePicker("", selection: $selection, displayedComponents: .hourAndMinute)
                 .labelsHidden()
         }
         .padding(12)

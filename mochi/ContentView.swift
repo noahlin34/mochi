@@ -13,6 +13,10 @@ struct ContentView: View {
     @State private var selection: AppTab = .home
     @State private var tabBarHeight: CGFloat = 0
 
+    @AppStorage("notificationsEnabled") private var notificationsEnabled = true
+    @AppStorage("reminderHour") private var reminderHour: Int = 9
+    @AppStorage("reminderMinute") private var reminderMinute: Int = 0
+
     private let engine = GameEngine()
 
     var body: some View {
@@ -78,10 +82,24 @@ struct ContentView: View {
         .task {
             SeedDataService.seedIfNeeded(context: modelContext)
             engine.runResetsIfNeeded(context: modelContext)
+            Task {
+                await NotificationManager.updateDailyReminder(
+                    enabled: notificationsEnabled,
+                    hour: reminderHour,
+                    minute: reminderMinute
+                )
+            }
         }
         .onChange(of: scenePhase) { phase in
             guard phase == .active else { return }
             engine.runResetsIfNeeded(context: modelContext)
+            Task {
+                await NotificationManager.updateDailyReminder(
+                    enabled: notificationsEnabled,
+                    hour: reminderHour,
+                    minute: reminderMinute
+                )
+            }
         }
     }
 
