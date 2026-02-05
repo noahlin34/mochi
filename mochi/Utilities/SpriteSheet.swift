@@ -54,11 +54,10 @@ struct SpriteSheetAnimator: View {
     var applyChromaKey: Bool = false
 
     @State private var startTime = Date()
+    @State private var processedImage: UIImage?
 
     var body: some View {
-        let uiImage = applyChromaKey
-            ? ChromaKeyProcessor.shared.image(named: imageName)
-            : UIImage(named: imageName)
+        let uiImage = applyChromaKey ? processedImage : UIImage(named: imageName)
 
         if let uiImage {
             TimelineView(.animation(minimumInterval: 1.0 / fps)) { timeline in
@@ -76,8 +75,14 @@ struct SpriteSheetAnimator: View {
                 }
             }
             .onAppear { startTime = Date() }
+            .task(id: taskId) {
+                await loadImageIfNeeded()
+            }
         } else {
             fallback
+                .task(id: taskId) {
+                    await loadImageIfNeeded()
+                }
         }
     }
 
@@ -91,5 +96,26 @@ struct SpriteSheetAnimator: View {
         guard !frames.isEmpty else { return 0 }
         let rawIndex = Int(elapsed * fps) % frames.count
         return frames[rawIndex]
+    }
+
+    private var taskId: String {
+        "\(imageName)_\(applyChromaKey)"
+    }
+
+    private func loadImageIfNeeded() async {
+        guard applyChromaKey else {
+            processedImage = nil
+            return
+        }
+        let name = imageName
+        let image = await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                let processed = ChromaKeyProcessor.shared.image(named: name)
+                continuation.resume(returning: processed)
+            }
+        }
+        if !Task.isCancelled {
+            processedImage = image
+        }
     }
 }

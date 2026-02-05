@@ -42,6 +42,7 @@ struct StoreView: View {
                 .padding(.horizontal, 20)
                 .padding(.bottom, tabBarPadding)
             }
+            .scrollIndicators(.hidden)
             .background(Color.appBackground)
             .navigationTitle("Shop")
             .toolbar {

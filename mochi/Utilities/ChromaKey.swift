@@ -135,21 +135,28 @@ struct ChromaKeyedImage: View {
     var contentMode: ContentMode = .fit
 
     @State private var renderedImage: UIImage?
+    @State private var loadTask: Task<Void, Never>?
 
     var body: some View {
         let image = baseImage
-        if resizable {
-            image
-                .resizable()
-                .aspectRatio(contentMode: contentMode)
-        } else {
-            image
+        Group {
+            if resizable {
+                image
+                    .resizable()
+                    .aspectRatio(contentMode: contentMode)
+            } else {
+                image
+            }
         }
-        .task(id: taskId) {
-            await loadImage()
+        .onAppear {
+            startLoad()
         }
-        .onChange(of: name) { _, _ in
-            renderedImage = nil
+        .onChange(of: taskId) { _, _ in
+            startLoad()
+        }
+        .onDisappear {
+            loadTask?.cancel()
+            loadTask = nil
         }
     }
 
@@ -166,7 +173,9 @@ struct ChromaKeyedImage: View {
 
     private func loadImage() async {
         guard applyChromaKey else {
-            renderedImage = nil
+            await MainActor.run {
+                renderedImage = nil
+            }
             return
         }
 
@@ -188,7 +197,16 @@ struct ChromaKeyedImage: View {
         }
 
         if !Task.isCancelled {
-            renderedImage = image
+            await MainActor.run {
+                renderedImage = image
+            }
+        }
+    }
+
+    private func startLoad() {
+        loadTask?.cancel()
+        loadTask = Task {
+            await loadImage()
         }
     }
 }

@@ -27,6 +27,7 @@ struct HomeView: View {
             .padding(.top, 8)
             .padding(.bottom, tabBarPadding)
         }
+        .scrollIndicators(.hidden)
         .background(Color.appBackground)
         .onChange(of: reactionController.pulse) { _ in
             triggerBounce()
