@@ -8,6 +8,7 @@ final class ChromaKeyProcessor {
 
     private let context = CIContext(options: [.useSoftwareRenderer: false])
     private let cache = NSCache<NSString, UIImage>()
+    private let cubeCache = NSCache<NSString, NSData>()
 
     private init() {
         cache.countLimit = 64
@@ -19,7 +20,7 @@ final class ChromaKeyProcessor {
         threshold: CGFloat = 0.5,
         smoothing: CGFloat = 0.08
     ) -> UIImage? {
-        let cacheKey = "\(name)_\(threshold)_\(smoothing)" as NSString
+        let cacheKey = "\(name)_\(keyColor.cacheKey)_\(threshold)_\(smoothing)" as NSString
         if let cached = cache.object(forKey: cacheKey) {
             return cached
         }
@@ -68,6 +69,11 @@ final class ChromaKeyProcessor {
         threshold: CGFloat,
         smoothing: CGFloat
     ) -> Data? {
+        let cubeKey = "\(dimension)_\(keyColor.cacheKey)_\(threshold)_\(smoothing)" as NSString
+        if let cached = cubeCache.object(forKey: cubeKey) {
+            return Data(referencing: cached)
+        }
+
         var red: CGFloat = 0
         var green: CGFloat = 0
         var blue: CGFloat = 0
@@ -105,9 +111,11 @@ final class ChromaKeyProcessor {
             }
         }
 
-        return cubeData.withUnsafeBufferPointer { buffer in
+        let data = cubeData.withUnsafeBufferPointer { buffer in
             Data(buffer: buffer)
         }
+        cubeCache.setObject(data as NSData, forKey: cubeKey)
+        return data
     }
 
     private func smoothstep(edge0: Float, edge1: Float, x: Float) -> Float {
@@ -120,8 +128,13 @@ final class ChromaKeyProcessor {
 struct ChromaKeyedImage: View {
     let name: String
     var applyChromaKey: Bool = true
+    var keyColor: UIColor = .green
+    var threshold: CGFloat = 0.5
+    var smoothing: CGFloat = 0.08
     var resizable: Bool = false
     var contentMode: ContentMode = .fit
+
+    @State private var renderedImage: UIImage?
 
     var body: some View {
         let image = baseImage
@@ -132,12 +145,61 @@ struct ChromaKeyedImage: View {
         } else {
             image
         }
+        .task(id: taskId) {
+            await loadImage()
+        }
+        .onChange(of: name) { _, _ in
+            renderedImage = nil
+        }
     }
 
     private var baseImage: Image {
-        if applyChromaKey, let uiImage = ChromaKeyProcessor.shared.image(named: name) {
+        if let uiImage = renderedImage {
             return Image(uiImage: uiImage)
         }
         return Image(name)
+    }
+
+    private var taskId: String {
+        "\(name)_\(applyChromaKey)_\(keyColor.cacheKey)_\(threshold)_\(smoothing)"
+    }
+
+    private func loadImage() async {
+        guard applyChromaKey else {
+            renderedImage = nil
+            return
+        }
+
+        let name = name
+        let keyColor = keyColor
+        let threshold = threshold
+        let smoothing = smoothing
+
+        let image = await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                let processed = ChromaKeyProcessor.shared.image(
+                    named: name,
+                    keyColor: keyColor,
+                    threshold: threshold,
+                    smoothing: smoothing
+                )
+                continuation.resume(returning: processed)
+            }
+        }
+
+        if !Task.isCancelled {
+            renderedImage = image
+        }
+    }
+}
+
+private extension UIColor {
+    var cacheKey: String {
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        return String(format: "%.3f_%.3f_%.3f_%.3f", red, green, blue, alpha)
     }
 }
