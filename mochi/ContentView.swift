@@ -12,6 +12,7 @@ struct ContentView: View {
     @StateObject private var reactionController = PetReactionController()
     @State private var selection: AppTab = .home
     @State private var tabBarHeight: CGFloat = 0
+    @State private var hasFinishedBootstrap = false
 
     @AppStorage("notificationsEnabled") private var notificationsEnabled = false
     @AppStorage("reminderHour") private var reminderHour: Int = 9
@@ -20,6 +21,60 @@ struct ContentView: View {
     private let engine = GameEngine()
 
     var body: some View {
+        ZStack {
+            mainContent
+
+            if shouldShowSplash {
+                SplashView()
+                    .transition(.opacity)
+                    .zIndex(10)
+            }
+        }
+        .environmentObject(reactionController)
+        .environment(\.tabBarHeight, tabBarHeight)
+        .onChange(of: reactionController.coinBurst) { _, newValue in
+            if newValue != nil {
+                Haptics.success()
+            }
+        }
+        .onChange(of: reactionController.statBursts.count) { oldValue, newValue in
+            if newValue > oldValue {
+                Haptics.light()
+            }
+        }
+        .task {
+            guard !hasFinishedBootstrap else { return }
+            SeedDataService.seedIfNeeded(context: modelContext)
+            engine.runResetsIfNeeded(context: modelContext)
+            await NotificationManager.updateDailyReminder(
+                enabled: notificationsEnabled,
+                hour: reminderHour,
+                minute: reminderMinute
+            )
+            withAnimation(.easeOut(duration: 0.25)) {
+                hasFinishedBootstrap = true
+            }
+        }
+        .onChange(of: scenePhase) { phase in
+            guard phase == .active else { return }
+            engine.runResetsIfNeeded(context: modelContext)
+            Task {
+                await NotificationManager.updateDailyReminder(
+                    enabled: notificationsEnabled,
+                    hour: reminderHour,
+                    minute: reminderMinute
+                )
+            }
+        }
+    }
+
+    private var shouldShowSplash: Bool {
+        if !hasFinishedBootstrap { return true }
+        return pets.first == nil || appStates.first == nil
+    }
+
+    @ViewBuilder
+    private var mainContent: some View {
         Group {
             if let pet = pets.first, let appState = appStates.first {
                 ZStack {
@@ -75,40 +130,6 @@ struct ContentView: View {
                 }
             } else {
                 ProgressView("Preparing mochi...")
-            }
-        }
-        .environmentObject(reactionController)
-        .environment(\.tabBarHeight, tabBarHeight)
-        .onChange(of: reactionController.coinBurst) { _, newValue in
-            if newValue != nil {
-                Haptics.success()
-            }
-        }
-        .onChange(of: reactionController.statBursts.count) { oldValue, newValue in
-            if newValue > oldValue {
-                Haptics.light()
-            }
-        }
-        .task {
-            SeedDataService.seedIfNeeded(context: modelContext)
-            engine.runResetsIfNeeded(context: modelContext)
-            Task {
-                await NotificationManager.updateDailyReminder(
-                    enabled: notificationsEnabled,
-                    hour: reminderHour,
-                    minute: reminderMinute
-                )
-            }
-        }
-        .onChange(of: scenePhase) { phase in
-            guard phase == .active else { return }
-            engine.runResetsIfNeeded(context: modelContext)
-            Task {
-                await NotificationManager.updateDailyReminder(
-                    enabled: notificationsEnabled,
-                    hour: reminderHour,
-                    minute: reminderMinute
-                )
             }
         }
     }
