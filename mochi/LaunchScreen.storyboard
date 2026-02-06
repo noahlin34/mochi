@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="24620" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="01J-lp-oVM">
+    <device id="retina6_12" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="24604"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <scene sceneID="EHf-IW-A2E">
+            <objects>
+                <viewController id="01J-lp-oVM" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="Ze5-6b-2t3">
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                        <subviews>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="LaunchMark" translatesAutoresizingMaskIntoConstraints="NO" id="M8v-RP-fAT">
+                                <rect key="frame" x="146.66666666666666" y="315" width="100" height="100"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="100" id="nZH-vV-TRI"/>
+                                    <constraint firstAttribute="height" constant="100" id="uhW-2C-jhN"/>
+                                </constraints>
+                            </imageView>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" text="mochi" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="mVz-R0-PEF">
+                                <rect key="frame" x="141.66666666666666" y="432" width="111" height="49"/>
+                                <fontDescription key="fontDescription" type="boldSystem" pointSize="40"/>
+                                <color key="textColor" red="0.20000000000000001" green="0.17999999999999999" blue="0.23999999999999999" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" text="Build habits. Care for your pet." textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="7Ku-3V-WI7">
+                                <rect key="frame" x="103" y="489" width="187" height="17"/>
+                                <fontDescription key="fontDescription" type="system" weight="semibold" pointSize="14"/>
+                                <color key="textColor" red="0.20000000000000001" green="0.17999999999999999" blue="0.23999999999999999" alpha="0.75" colorSpace="custom" customColorSpace="sRGB"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="Bcu-3y-fUS"/>
+                        <color key="backgroundColor" red="0.81999999999999995" green="0.93000000000000005" blue="0.84999999999999998" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <constraints>
+                            <constraint firstItem="M8v-RP-fAT" firstAttribute="centerX" secondItem="Bcu-3y-fUS" secondAttribute="centerX" id="4rM-ZX-5F6"/>
+                            <constraint firstItem="mVz-R0-PEF" firstAttribute="top" secondItem="M8v-RP-fAT" secondAttribute="bottom" constant="16" id="Qw7-lN-2ob"/>
+                            <constraint firstItem="M8v-RP-fAT" firstAttribute="centerY" secondItem="Bcu-3y-fUS" secondAttribute="centerY" constant="-40" id="XbG-u8-gFo"/>
+                            <constraint firstItem="7Ku-3V-WI7" firstAttribute="centerX" secondItem="Bcu-3y-fUS" secondAttribute="centerX" id="YJQ-Pu-MDy"/>
+                            <constraint firstItem="mVz-R0-PEF" firstAttribute="centerX" secondItem="Bcu-3y-fUS" secondAttribute="centerX" id="ePm-Ft-bAK"/>
+                            <constraint firstItem="7Ku-3V-WI7" firstAttribute="top" secondItem="mVz-R0-PEF" secondAttribute="bottom" constant="8" id="w6I-CW-bdx"/>
+                        </constraints>
+                    </view>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="iYj-Kq-Ea1" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="53" y="375"/>
+        </scene>
+    </scenes>
+    <resources>
+        <image name="LaunchMark" width="512" height="512"/>
+    </resources>
+</document>

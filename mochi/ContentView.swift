@@ -19,6 +19,7 @@ struct ContentView: View {
     @AppStorage("reminderMinute") private var reminderMinute: Int = 0
 
     private let engine = GameEngine()
+    private let minimumSplashDuration: Duration = .milliseconds(1700)
 
     var body: some View {
         ZStack {
@@ -44,6 +45,8 @@ struct ContentView: View {
         }
         .task {
             guard !hasFinishedBootstrap else { return }
+            let clock = ContinuousClock()
+            let start = clock.now
             SeedDataService.seedIfNeeded(context: modelContext)
             engine.runResetsIfNeeded(context: modelContext)
             await NotificationManager.updateDailyReminder(
@@ -51,6 +54,10 @@ struct ContentView: View {
                 hour: reminderHour,
                 minute: reminderMinute
             )
+            let elapsed = start.duration(to: clock.now)
+            if elapsed < minimumSplashDuration {
+                try? await Task.sleep(for: minimumSplashDuration - elapsed)
+            }
             withAnimation(.easeOut(duration: 0.25)) {
                 hasFinishedBootstrap = true
             }
