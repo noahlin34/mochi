@@ -54,6 +54,7 @@ struct ContentView: View {
                 hour: reminderHour,
                 minute: reminderMinute
             )
+            HabitWidgetSyncService.sync(context: modelContext)
             let elapsed = start.duration(to: clock.now)
             if elapsed < minimumSplashDuration {
                 try? await Task.sleep(for: minimumSplashDuration - elapsed)
@@ -65,6 +66,7 @@ struct ContentView: View {
         .onChange(of: scenePhase) { phase in
             guard phase == .active else { return }
             engine.runResetsIfNeeded(context: modelContext)
+            HabitWidgetSyncService.sync(context: modelContext)
             Task {
                 await NotificationManager.updateDailyReminder(
                     enabled: notificationsEnabled,

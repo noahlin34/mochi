@@ -1,38 +1,50 @@
 # Repository Guidelines
 
+## Project Snapshot
+- `mochi` is an offline-first iOS habit tracker/pet-care game built with SwiftUI + SwiftData.
+- The app currently includes onboarding/tutorial flow, animated splash, local notification reminders, shop/customization, and pet sprite/chroma-key rendering helpers.
+- No backend or third-party package dependencies are used.
+
 ## Project Structure & Module Organization
-- `mochi/` contains the app source code.
-- `mochi/mochiApp.swift` is the application entry point and configures the SwiftData `ModelContainer`.
-- `mochi/ContentView.swift` composes the root experience and tabs.
-- `mochi/Views/` contains SwiftUI screens and reusable view components (home, habits, pet, store, settings, forms, tab bar).
-- `mochi/Models/` contains SwiftData models and app state (`Habit`, `Pet`, `InventoryItem`, `AppState`, enums).
-- `mochi/Services/` contains game logic and seed data helpers (`GameEngine`, `SeedDataService`).
-- `mochi/Utilities/` contains app-wide helpers (theme, shapes, haptics, reaction controller).
-- `mochi/Assets.xcassets/` holds app icons and color assets.
-- `mochi.xcodeproj/` is the Xcode project configuration.
+- `mochi/mochiApp.swift`: app entry point, SwiftData container setup, and persistent store recovery.
+- `mochi/ContentView.swift`: bootstrap flow (seed/reset/reminders), tab shell, splash gating, tutorial presentation.
+- `mochi/Models/`: SwiftData models and enums (`Habit`, `Pet`, `InventoryItem`, `AppState`, shared enums).
+- `mochi/Services/`: game/domain logic (`GameEngine`, `SeedDataService`, `NotificationManager`).
+- `mochi/Views/`: feature screens and UI components (`HomeView`, `HabitsView`, `PetView`, `StoreView`, `SettingsView`, `TutorialView`, `SplashView`, effects, tab bar).
+- `mochi/Utilities/`: shared helpers (`AppTheme`, `Haptics`, `PetReactionController`, `SpriteSheet`, `ChromaKey`, layout/preview helpers).
+- `mochi/Assets.xcassets/`: app icon, launch assets, pets, outfits, and room art.
+- `mochi/LaunchScreen.storyboard`: launch screen configuration.
+- `mochi.xcodeproj/`: project and scheme configuration.
 
 ## Build, Test, and Development Commands
-- `open mochi.xcodeproj` opens the project in Xcode for local development.
-- `xcodebuild -scheme mochi -configuration Debug build` builds the app from the command line.
-- `xcodebuild -scheme mochi -destination 'platform=iOS Simulator,name=iPhone 15' build` builds for a specific simulator (adjust the device name to one installed locally).
-- `xcodebuild -scheme mochi test` runs tests, if test targets are added.
+- `open mochi.xcodeproj`: open in Xcode.
+- `xcodebuild -list -project mochi.xcodeproj`: verify schemes/targets on this machine.
+- `xcodebuild -scheme mochi -configuration Debug build`: debug build from CLI.
+- `xcodebuild -scheme mochi -destination 'platform=iOS Simulator,name=iPhone 16' build`: simulator build (use any installed simulator name).
+- `xcodebuild -scheme mochi -destination 'platform=iOS Simulator,name=iPhone 16' test`: run tests once a test target exists.
 
 ## Coding Style & Naming Conventions
-- Use standard Swift style with 4-space indentation and SwiftUI formatting.
-- Prefer descriptive, Swift API-style naming: `UpperCamelCase` for types, `lowerCamelCase` for variables and functions.
-- Keep SwiftUI views small and focused; extract subviews when a view grows beyond a single screen of logic.
-- No formatter or linter is configured; follow Xcode’s default formatting and avoid trailing whitespace.
+- Use standard Swift style with 4-space indentation and Xcode default formatting.
+- Follow Swift naming conventions: `UpperCamelCase` for types and `lowerCamelCase` for functions/properties.
+- Keep view code focused; extract subviews/services when screen logic grows.
+- Keep game/business rules in `Services/` and data definitions in `Models/`; avoid embedding rule logic directly in views.
+- No formatter/linter is configured; avoid trailing whitespace and broad unrelated formatting changes.
 
 ## Testing Guidelines
-- There are no test targets in the repository yet.
-- When adding tests, use XCTest and name files `*Tests.swift` in a new test target (e.g., `mochiTests`).
-- Keep tests deterministic and run them with `xcodebuild -scheme mochi test` before submitting changes.
+- There is currently no committed XCTest target.
+- For new logic-heavy changes (especially `Services/` and `Models/`), add XCTest coverage in a new test target (for example `mochiTests`).
+- Keep tests deterministic (fixed dates/inputs for streak, reset, and reward logic).
+- Before submitting, run `xcodebuild -scheme mochi -destination 'platform=iOS Simulator,name=iPhone 16' build` and any available tests.
 
 ## Commit & Pull Request Guidelines
-- Git history currently contains only `Initial Commit`, so no strict convention is established.
-- Use concise, imperative commit messages (e.g., “Add item deletion animation”).
-- PRs should include a brief summary, testing notes, and screenshots for UI changes.
+- Use concise imperative commit messages (for example: `Add daily reminder toggle persistence`).
+- Keep commits scoped to one logical change.
+- PRs should include:
+  - brief summary of behavior changes,
+  - testing notes (simulator/device + commands run),
+  - screenshots/video for UI or animation changes.
 
 ## Security & Configuration Tips
-- Avoid committing personal Xcode user data under `mochi.xcodeproj/xcuserdata`.
-- Store any future secrets outside the repo (e.g., in local environment settings or Xcode build settings).
+- Do not commit secrets or API keys; this app should remain local-only.
+- Avoid adding personal Xcode artifacts in `mochi.xcodeproj/xcuserdata`.
+- Keep large generated media limited to `mochi/Assets.xcassets` and remove unused assets to keep repository size manageable.

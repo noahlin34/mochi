@@ -13,8 +13,8 @@ struct PetView: View {
     @State private var blinkTask: Task<Void, Never>?
 
     var body: some View {
-        ZStack {
-            petBody
+        petBody
+        .overlay {
             PetOverlayItemsView(species: species, overlaySymbols: overlaySymbols)
         }
         .frame(width: 170, height: 170)
@@ -160,7 +160,7 @@ private struct PetOverlayItemView: View {
         case .penguin:
             return OverlayPlacement(size: CGSize(width: 76, height: 76), offset: CGSize(width: 0, height: -64), rotationDegrees: 0)
         case .lion:
-            return OverlayPlacement(size: CGSize(width: 90, height: 90), offset: CGSize(width: 0, height: -64), rotationDegrees: 0)
+            return OverlayPlacement(size: CGSize(width: 90, height: 90), offset: CGSize(width: 0, height: -60), rotationDegrees: 0)
         }
     }
 
