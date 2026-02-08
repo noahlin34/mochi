@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 
 struct HomeView: View {
+    @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var reactionController: PetReactionController
     @Environment(\.tabBarHeight) private var tabBarHeight
     @Query(sort: \Habit.createdAt) private var habits: [Habit]
@@ -227,6 +228,7 @@ struct HomeView: View {
             if cleanlinessDelta > 0 {
                 reactionController.triggerStatBurst(kind: .cleanliness, amount: cleanlinessDelta)
             }
+            HabitWidgetSyncService.sync(context: modelContext)
         }
     }
 

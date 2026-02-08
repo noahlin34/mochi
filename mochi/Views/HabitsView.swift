@@ -116,11 +116,13 @@ struct HabitsView: View {
             if cleanlinessDelta > 0 {
                 reactionController.triggerStatBurst(kind: .cleanliness, amount: cleanlinessDelta)
             }
+            HabitWidgetSyncService.sync(context: modelContext)
         }
     }
 
     private func deleteHabit(_ habit: Habit) {
         modelContext.delete(habit)
+        HabitWidgetSyncService.sync(context: modelContext)
     }
 
     private func triggerBounce() {

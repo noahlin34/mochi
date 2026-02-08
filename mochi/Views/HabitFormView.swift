@@ -81,6 +81,7 @@ struct HabitFormView: View {
             modelContext.insert(newHabit)
         }
 
+        HabitWidgetSyncService.sync(context: modelContext)
         dismiss()
     }
 }

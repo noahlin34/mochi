@@ -5,7 +5,15 @@ enum HabitWidgetSnapshotStore {
     static let snapshotKey = "habit_widget_snapshot_v1"
 
     static func save(_ snapshot: HabitWidgetSnapshot) {
-        guard let defaults = UserDefaults(suiteName: appGroupIdentifier) else { return }
+        save(snapshot, defaults: UserDefaults(suiteName: appGroupIdentifier))
+    }
+
+    static func load() -> HabitWidgetSnapshot? {
+        load(defaults: UserDefaults(suiteName: appGroupIdentifier))
+    }
+
+    static func save(_ snapshot: HabitWidgetSnapshot, defaults: UserDefaults?) {
+        guard let defaults else { return }
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
 
@@ -13,8 +21,8 @@ enum HabitWidgetSnapshotStore {
         defaults.set(data, forKey: snapshotKey)
     }
 
-    static func load() -> HabitWidgetSnapshot? {
-        guard let defaults = UserDefaults(suiteName: appGroupIdentifier) else { return nil }
+    static func load(defaults: UserDefaults?) -> HabitWidgetSnapshot? {
+        guard let defaults else { return nil }
         guard let data = defaults.data(forKey: snapshotKey) else { return nil }
 
         let decoder = JSONDecoder()
