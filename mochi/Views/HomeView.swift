@@ -60,7 +60,12 @@ struct HomeView: View {
                 SpeechBubble(text: "Hi \(appState.userDisplayName)! \(petStatusMessage)")
                     .padding(.top, 10)
 
-                PetView(species: pet.species, outfitSymbol: equippedOutfit?.assetName, isBouncing: isBouncing)
+                PetView(
+                    species: pet.species,
+                    baseOutfitSymbol: equippedBaseOutfit?.assetName,
+                    overlaySymbols: equippedOverlayOutfits.map(\.assetName),
+                    isBouncing: isBouncing
+                )
                     .frame(height: 170)
             }
             .padding(.horizontal, 12)
@@ -116,12 +121,27 @@ struct HomeView: View {
         [AppColors.cardGreen, AppColors.cardYellow, AppColors.cardPurple]
     }
 
-    private var equippedOutfit: InventoryItem? {
-        let equipped = items.filter { $0.type == .outfit && $0.equipped }
+    private var equippedBaseOutfit: InventoryItem? {
+        let equipped = items.filter {
+            $0.type == .outfit
+                && $0.equipped
+                && $0.equipStyle == .replaceSprite
+        }
         if let match = equipped.first(where: { $0.petSpecies == pet.species }) {
             return match
         }
         return equipped.first(where: { $0.petSpecies == nil })
+    }
+
+    private var equippedOverlayOutfits: [InventoryItem] {
+        items
+            .filter {
+                $0.type == .outfit
+                    && $0.equipped
+                    && $0.equipStyle == .overlay
+                    && $0.isAvailable(for: pet.species)
+            }
+            .sorted { $0.createdAt < $1.createdAt }
     }
 
     private var equippedRoom: InventoryItem? {

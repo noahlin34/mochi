@@ -67,3 +67,10 @@ enum InventoryItemType: String, Codable, CaseIterable, Identifiable {
         rawValue.capitalized
     }
 }
+
+enum InventoryEquipStyle: String, Codable, CaseIterable, Identifiable {
+    case replaceSprite
+    case overlay
+
+    var id: String { rawValue }
+}

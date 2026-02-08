@@ -11,6 +11,7 @@ final class InventoryItem {
     var equipped: Bool
     var assetName: String
     var petSpeciesRaw: String?
+    var equipStyleRaw: String = InventoryEquipStyle.replaceSprite.rawValue
     var createdAt: Date
 
     init(
@@ -22,6 +23,7 @@ final class InventoryItem {
         equipped: Bool = false,
         assetName: String,
         petSpecies: PetSpecies? = nil,
+        equipStyle: InventoryEquipStyle = .replaceSprite,
         createdAt: Date = Date()
     ) {
         self.id = id
@@ -32,6 +34,7 @@ final class InventoryItem {
         self.equipped = equipped
         self.assetName = assetName
         self.petSpeciesRaw = petSpecies?.rawValue
+        self.equipStyleRaw = equipStyle.rawValue
         self.createdAt = createdAt
     }
 
@@ -42,6 +45,15 @@ final class InventoryItem {
         }
         set {
             petSpeciesRaw = newValue?.rawValue
+        }
+    }
+
+    var equipStyle: InventoryEquipStyle {
+        get {
+            InventoryEquipStyle(rawValue: equipStyleRaw) ?? .replaceSprite
+        }
+        set {
+            equipStyleRaw = newValue.rawValue
         }
     }
 

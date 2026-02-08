@@ -73,7 +73,7 @@ struct HabitsView: View {
 
     private var headerCard: some View {
         HStack(spacing: 16) {
-            PetView(species: pet.species, outfitSymbol: nil, isBouncing: isBouncing)
+            PetView(species: pet.species, baseOutfitSymbol: nil, overlaySymbols: [], isBouncing: isBouncing)
                 .scaleEffect(0.55)
                 .frame(width: 90, height: 90)
 

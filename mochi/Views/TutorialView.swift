@@ -2,8 +2,6 @@ import SwiftUI
 import SwiftData
 
 struct TutorialView: View {
-    @Environment(\.dismiss) private var dismiss
-
     @Bindable var pet: Pet
     @Bindable var appState: AppState
 
@@ -181,22 +179,21 @@ struct TutorialView: View {
     private func finishTutorial() {
         appState.userName = nameInputTrimmed
         appState.tutorialSeen = true
-        dismiss()
     }
 
     @ViewBuilder
     private var previewView: some View {
         switch stepIndex {
         case 1:
-            HomeView(pet: pet, appState: appState)
+            TutorialMockScreen(kind: .home)
         case 2:
-            HabitsView(pet: pet, appState: appState)
+            TutorialMockScreen(kind: .habits)
         case 3:
-            StoreView(pet: pet)
+            TutorialMockScreen(kind: .shop)
         case 4:
-            SettingsView(pet: pet, appState: appState)
+            TutorialMockScreen(kind: .settings)
         case 5:
-            SettingsView(pet: pet, appState: appState)
+            TutorialMockScreen(kind: .reminders)
         default:
             EmptyView()
         }
@@ -422,6 +419,116 @@ private struct TutorialScreenPreview<Content: View>: View {
             .shadow(color: .black.opacity(0.06), radius: 10, x: 0, y: 6)
             .scaleEffect(0.95)
             .padding(.bottom, 4)
+    }
+}
+
+private struct TutorialMockScreen: View {
+    let kind: Kind
+
+    var body: some View {
+        ZStack {
+            Color.appBackground
+
+            VStack(spacing: 12) {
+                HStack {
+                    Text(kind.title)
+                        .font(.headline)
+                        .foregroundStyle(AppColors.textPrimary)
+                    Spacer()
+                    Image(systemName: kind.icon)
+                        .foregroundStyle(AppColors.accentPurple)
+                }
+
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(kind.accent.opacity(0.55))
+                    .frame(height: 94)
+                    .overlay(
+                        HStack(spacing: 10) {
+                            Circle()
+                                .fill(.white.opacity(0.85))
+                                .frame(width: 38, height: 38)
+                                .overlay(
+                                    Image(systemName: kind.icon)
+                                        .foregroundStyle(AppColors.accentPurple)
+                                )
+
+                            VStack(alignment: .leading, spacing: 6) {
+                                Capsule().fill(.white.opacity(0.9)).frame(width: 86, height: 10)
+                                Capsule().fill(.white.opacity(0.75)).frame(width: 120, height: 8)
+                                Capsule().fill(.white.opacity(0.75)).frame(width: 66, height: 8)
+                            }
+                            Spacer()
+                        }
+                        .padding(.horizontal, 14)
+                    )
+
+                HStack(spacing: 10) {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(.white)
+                        .frame(height: 58)
+                        .overlay(Capsule().fill(kind.accent.opacity(0.55)).frame(width: 62, height: 8))
+
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(.white)
+                        .frame(height: 58)
+                        .overlay(Capsule().fill(kind.accent.opacity(0.55)).frame(width: 44, height: 8))
+                }
+            }
+            .padding(14)
+        }
+    }
+
+    enum Kind {
+        case home
+        case habits
+        case shop
+        case settings
+        case reminders
+
+        var title: String {
+            switch self {
+            case .home:
+                return "Home"
+            case .habits:
+                return "Habits"
+            case .shop:
+                return "Shop"
+            case .settings:
+                return "Settings"
+            case .reminders:
+                return "Reminders"
+            }
+        }
+
+        var icon: String {
+            switch self {
+            case .home:
+                return "house.fill"
+            case .habits:
+                return "checkmark.circle.fill"
+            case .shop:
+                return "bag.fill"
+            case .settings:
+                return "gearshape.fill"
+            case .reminders:
+                return "bell.fill"
+            }
+        }
+
+        var accent: Color {
+            switch self {
+            case .home:
+                return AppColors.cardPeach
+            case .habits:
+                return AppColors.cardGreen
+            case .shop:
+                return AppColors.cardYellow
+            case .settings:
+                return AppColors.cardPurple
+            case .reminders:
+                return AppColors.cardGreen
+            }
+        }
     }
 }
 

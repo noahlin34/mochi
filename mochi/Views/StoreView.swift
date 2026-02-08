@@ -158,8 +158,12 @@ struct StoreView: View {
         [AppColors.cardGreen, AppColors.cardPeach, AppColors.cardPurple, AppColors.cardYellow]
     }
 
-    private var equippedOutfit: InventoryItem? {
-        let equipped = items.filter { $0.type == .outfit && $0.equipped }
+    private var equippedBaseOutfit: InventoryItem? {
+        let equipped = items.filter {
+            $0.type == .outfit
+                && $0.equipped
+                && $0.equipStyle == .replaceSprite
+        }
         if let match = equipped.first(where: { $0.petSpecies == pet.species }) {
             return match
         }
@@ -170,11 +174,38 @@ struct StoreView: View {
         items.first { $0.type == .room && $0.equipped }
     }
 
-    private var previewOutfit: InventoryItem? {
-        if let previewItem, previewItem.type == .outfit {
+    private func equippedOverlayOutfits(for species: PetSpecies) -> [InventoryItem] {
+        items
+            .filter {
+                $0.type == .outfit
+                    && $0.equipped
+                    && $0.equipStyle == .overlay
+                    && $0.isAvailable(for: species)
+            }
+            .sorted { $0.createdAt < $1.createdAt }
+    }
+
+    private var previewBaseOutfit: InventoryItem? {
+        if let previewItem,
+           previewItem.type == .outfit,
+           previewItem.equipStyle == .replaceSprite {
             return previewItem
         }
-        return equippedOutfit
+        return equippedBaseOutfit
+    }
+
+    private var previewOverlayOutfits: [InventoryItem] {
+        var overlays = equippedOverlayOutfits(for: previewSpecies)
+        guard let previewItem,
+              previewItem.type == .outfit,
+              previewItem.equipStyle == .overlay,
+              previewItem.isAvailable(for: previewSpecies) else {
+            return overlays
+        }
+        if !overlays.contains(where: { $0.id == previewItem.id }) {
+            overlays.append(previewItem)
+        }
+        return overlays
     }
 
     private var previewRoom: InventoryItem? {
@@ -206,8 +237,11 @@ struct StoreView: View {
             for other in items where other.type == .room {
                 other.equipped = false
             }
-        } else {
-            for other in items where other.type == item.type && other.petSpecies == item.petSpecies {
+        } else if item.equipStyle == .replaceSprite {
+            for other in items where
+                other.type == item.type
+                    && other.equipStyle == .replaceSprite
+                    && other.petSpecies == item.petSpecies {
                 other.equipped = false
             }
         }
@@ -242,7 +276,12 @@ struct StoreView: View {
                 LandscapeBackgroundView(assetName: previewRoom?.assetName)
                     .padding(12)
 
-                PetView(species: previewSpecies, outfitSymbol: previewOutfit?.assetName, isBouncing: false)
+                PetView(
+                    species: previewSpecies,
+                    baseOutfitSymbol: previewBaseOutfit?.assetName,
+                    overlaySymbols: previewOverlayOutfits.map(\.assetName),
+                    isBouncing: false
+                )
                     .scaleEffect(0.8)
                     .padding(.top, 8)
             }
@@ -372,6 +411,13 @@ private struct StoreItemCard: View {
             }
         }
         if item.type == .outfit {
+            if item.equipStyle == .overlay {
+                for candidate in overlayAssetCandidates(for: previewSpecies, assetName: item.assetName) {
+                    if UIImage(named: candidate) != nil {
+                        return candidate
+                    }
+                }
+            }
             if let petSpecies = item.petSpecies {
                 let petOutfit = "\(petSpecies.rawValue)_pet_\(item.assetName)"
                 if UIImage(named: petOutfit) != nil {
@@ -384,6 +430,16 @@ private struct StoreItemCard: View {
             }
         }
         return nil
+    }
+
+    private func overlayAssetCandidates(for species: PetSpecies, assetName: String) -> [String] {
+        [
+            "\(species.rawValue)_pet_overlay_\(assetName)",
+            "\(species.rawValue)_overlay_\(assetName)",
+            "pet_overlay_\(assetName)",
+            "overlay_\(assetName)",
+            assetName
+        ]
     }
 
     private var previewSpecies: PetSpecies {

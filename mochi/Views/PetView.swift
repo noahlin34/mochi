@@ -3,7 +3,8 @@ import UIKit
 
 struct PetView: View {
     let species: PetSpecies
-    let outfitSymbol: String?
+    let baseOutfitSymbol: String?
+    let overlaySymbols: [String]
     let isBouncing: Bool
 
     @State private var idleOffset: CGFloat = 0
@@ -12,7 +13,10 @@ struct PetView: View {
     @State private var blinkTask: Task<Void, Never>?
 
     var body: some View {
-        petBody
+        ZStack {
+            petBody
+            PetOverlayItemsView(species: species, overlaySymbols: overlaySymbols)
+        }
         .frame(width: 170, height: 170)
         .offset(y: idleOffset)
         .scaleEffect(isBouncing ? 1.08 : 1.0)
@@ -23,7 +27,10 @@ struct PetView: View {
         .onChange(of: species) { _, _ in
             startIdleAnimations()
         }
-        .onChange(of: outfitSymbol) { _, _ in
+        .onChange(of: baseOutfitSymbol) { _, _ in
+            startIdleAnimations()
+        }
+        .onChange(of: overlaySymbols) { _, _ in
             startIdleAnimations()
         }
         .onDisappear {
@@ -36,13 +43,13 @@ struct PetView: View {
         case .cat:
             CatPetView(blink: blink, tailWag: tailWag)
         case .dog:
-            DogPetView(blink: blink, tailWag: tailWag, outfitAssetName: outfitSymbol)
+            DogPetView(blink: blink, tailWag: tailWag, outfitAssetName: baseOutfitSymbol)
         case .bunny:
             BunnyPetView(blink: blink)
         case .penguin:
-            PenguinPetView(blink: blink, tailWag: tailWag, outfitAssetName: outfitSymbol)
+            PenguinPetView(blink: blink, tailWag: tailWag, outfitAssetName: baseOutfitSymbol)
         case .lion:
-            LionPetView(blink: blink, tailWag: tailWag, outfitAssetName: outfitSymbol)
+            LionPetView(blink: blink, tailWag: tailWag, outfitAssetName: baseOutfitSymbol)
         }
     }
 
@@ -81,6 +88,96 @@ struct PetView: View {
     private func stopIdleAnimations() {
         blinkTask?.cancel()
         blinkTask = nil
+    }
+}
+
+private struct PetOverlayItemsView: View {
+    let species: PetSpecies
+    let overlaySymbols: [String]
+
+    var body: some View {
+        ZStack {
+            ForEach(Array(overlaySymbols.enumerated()), id: \.offset) { _, assetName in
+                PetOverlayItemView(species: species, assetName: assetName)
+            }
+        }
+        .allowsHitTesting(false)
+    }
+}
+
+private struct PetOverlayItemView: View {
+    let species: PetSpecies
+    let assetName: String
+
+    var body: some View {
+        if let imageName = resolvedImageName() {
+            let placement = resolvedPlacement(for: imageName)
+            ChromaKeyedImage(
+                name: imageName,
+                applyChromaKey: true,
+                keyColor: UIColor(red: 0.0, green: 1.0, blue: 0.0, alpha: 1.0),
+                threshold: 0.18,
+                smoothing: 0.05,
+                resizable: true,
+                contentMode: .fit
+            )
+            .frame(width: placement.size.width, height: placement.size.height)
+            .offset(placement.offset)
+            .rotationEffect(.degrees(placement.rotationDegrees))
+        }
+    }
+
+    private func resolvedImageName() -> String? {
+        for candidate in overlayAssetCandidates(for: species, assetName: assetName) {
+            if UIImage(named: candidate) != nil {
+                return candidate
+            }
+        }
+        return nil
+    }
+
+    private func resolvedPlacement(for imageName: String) -> OverlayPlacement {
+        if imageName != assetName {
+            return OverlayPlacement(size: CGSize(width: 160, height: 160), offset: .zero, rotationDegrees: 0)
+        }
+
+        switch assetName {
+        case "top_hat":
+            return topHatPlacement(for: species)
+        default:
+            return OverlayPlacement(size: CGSize(width: 160, height: 160), offset: .zero, rotationDegrees: 0)
+        }
+    }
+
+    private func topHatPlacement(for species: PetSpecies) -> OverlayPlacement {
+        switch species {
+        case .cat:
+            return OverlayPlacement(size: CGSize(width: 86, height: 86), offset: CGSize(width: 0, height: -58), rotationDegrees: 0)
+        case .dog:
+            return OverlayPlacement(size: CGSize(width: 90, height: 90), offset: CGSize(width: 0, height: -60), rotationDegrees: 0)
+        case .bunny:
+            return OverlayPlacement(size: CGSize(width: 82, height: 82), offset: CGSize(width: 0, height: -74), rotationDegrees: 0)
+        case .penguin:
+            return OverlayPlacement(size: CGSize(width: 76, height: 76), offset: CGSize(width: 0, height: -64), rotationDegrees: 0)
+        case .lion:
+            return OverlayPlacement(size: CGSize(width: 90, height: 90), offset: CGSize(width: 0, height: -64), rotationDegrees: 0)
+        }
+    }
+
+    private func overlayAssetCandidates(for species: PetSpecies, assetName: String) -> [String] {
+        [
+            "\(species.rawValue)_pet_overlay_\(assetName)",
+            "\(species.rawValue)_overlay_\(assetName)",
+            "pet_overlay_\(assetName)",
+            "overlay_\(assetName)",
+            assetName
+        ]
+    }
+
+    private struct OverlayPlacement {
+        let size: CGSize
+        let offset: CGSize
+        let rotationDegrees: Double
     }
 }
 
@@ -1067,7 +1164,7 @@ private struct LionVectorPetView: View {
 
 #Preview {
     VStack(spacing: 16) {
-        PetView(species: .lion, outfitSymbol: nil, isBouncing: false)
+        PetView(species: .lion, baseOutfitSymbol: nil, overlaySymbols: ["top_hat"], isBouncing: false)
 
     }
     .padding()
