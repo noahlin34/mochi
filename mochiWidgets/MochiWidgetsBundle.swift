@@ -5,5 +5,6 @@ import SwiftUI
 struct MochiWidgetsBundle: WidgetBundle {
     var body: some Widget {
         HabitStatusLockScreenWidget()
+        HabitPreviewHomeWidget()
     }
 }

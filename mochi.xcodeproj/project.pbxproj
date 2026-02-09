@@ -14,6 +14,9 @@
 		A10000000000000000000034 /* HabitWidgetSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000008 /* HabitWidgetSnapshotStore.swift */; };
 		A10000000000000000000035 /* HabitWidgetProgressCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000009 /* HabitWidgetProgressCalculator.swift */; };
 		A10000000000000000000036 /* MochiWidgetsExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = A10000000000000000000001 /* MochiWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		A10000000000000000000037 /* HabitPreviewHomeWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000000A /* HabitPreviewHomeWidget.swift */; };
+		A10000000000000000000038 /* HabitPreviewTimelineProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000000B /* HabitPreviewTimelineProvider.swift */; };
+		A10000000000000000000039 /* HabitWidgetListCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000000C /* HabitWidgetListCalculator.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -58,6 +61,9 @@
 		A10000000000000000000007 /* HabitWidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HabitWidgetSnapshot.swift; path = mochi/Shared/HabitWidgetSnapshot.swift; sourceTree = SOURCE_ROOT; };
 		A10000000000000000000008 /* HabitWidgetSnapshotStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HabitWidgetSnapshotStore.swift; path = mochi/Services/HabitWidgetSnapshotStore.swift; sourceTree = SOURCE_ROOT; };
 		A10000000000000000000009 /* HabitWidgetProgressCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HabitWidgetProgressCalculator.swift; path = mochi/Services/HabitWidgetProgressCalculator.swift; sourceTree = SOURCE_ROOT; };
+		A1000000000000000000000A /* HabitPreviewHomeWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitPreviewHomeWidget.swift; sourceTree = "<group>"; };
+		A1000000000000000000000B /* HabitPreviewTimelineProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitPreviewTimelineProvider.swift; sourceTree = "<group>"; };
+		A1000000000000000000000C /* HabitWidgetListCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HabitWidgetListCalculator.swift; path = mochi/Services/HabitWidgetListCalculator.swift; sourceTree = SOURCE_ROOT; };
 		A20000000000000000000001 /* mochiTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = mochiTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -125,9 +131,12 @@
 				A10000000000000000000004 /* MochiWidgetsBundle.swift */,
 				A10000000000000000000002 /* HabitStatusLockScreenWidget.swift */,
 				A10000000000000000000003 /* HabitStatusTimelineProvider.swift */,
+				A1000000000000000000000A /* HabitPreviewHomeWidget.swift */,
+				A1000000000000000000000B /* HabitPreviewTimelineProvider.swift */,
 				A10000000000000000000007 /* HabitWidgetSnapshot.swift */,
 				A10000000000000000000008 /* HabitWidgetSnapshotStore.swift */,
 				A10000000000000000000009 /* HabitWidgetProgressCalculator.swift */,
+				A1000000000000000000000C /* HabitWidgetListCalculator.swift */,
 				A10000000000000000000005 /* Info.plist */,
 				A10000000000000000000006 /* mochiWidgets.entitlements */,
 			);
@@ -285,9 +294,12 @@
 				A10000000000000000000032 /* MochiWidgetsBundle.swift in Sources */,
 				A10000000000000000000030 /* HabitStatusLockScreenWidget.swift in Sources */,
 				A10000000000000000000031 /* HabitStatusTimelineProvider.swift in Sources */,
+				A10000000000000000000037 /* HabitPreviewHomeWidget.swift in Sources */,
+				A10000000000000000000038 /* HabitPreviewTimelineProvider.swift in Sources */,
 				A10000000000000000000033 /* HabitWidgetSnapshot.swift in Sources */,
 				A10000000000000000000034 /* HabitWidgetSnapshotStore.swift in Sources */,
 				A10000000000000000000035 /* HabitWidgetProgressCalculator.swift in Sources */,
+				A10000000000000000000039 /* HabitWidgetListCalculator.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -4,11 +4,12 @@ import WidgetKit
 
 @MainActor
 enum HabitWidgetSyncService {
-    static let widgetKind = "habit_status_lockscreen"
+    static let lockScreenWidgetKind = "habit_status_lockscreen"
+    static let homeScreenWidgetKind = "habit_preview_homescreen"
 
     static func sync(context: ModelContext) {
         guard let appState = fetchSingle(AppState.self, context: context) else { return }
-        let habits = fetchAll(Habit.self, context: context)
+        let habits = fetchHabits(context: context)
 
         let snapshot = HabitWidgetSnapshot(
             generatedAt: Date(),
@@ -17,6 +18,8 @@ enum HabitWidgetSyncService {
             habits: habits.map { habit in
                 HabitWidgetHabitRecord(
                     id: habit.id,
+                    title: habit.title,
+                    createdAt: habit.createdAt,
                     schedule: habit.scheduleType.widgetSchedule,
                     targetPerDay: habit.targetPerDay,
                     targetPerWeek: habit.targetPerWeek,
@@ -27,7 +30,8 @@ enum HabitWidgetSyncService {
         )
 
         HabitWidgetSnapshotStore.save(snapshot)
-        WidgetCenter.shared.reloadTimelines(ofKind: widgetKind)
+        WidgetCenter.shared.reloadTimelines(ofKind: lockScreenWidgetKind)
+        WidgetCenter.shared.reloadTimelines(ofKind: homeScreenWidgetKind)
     }
 
     private static func fetchSingle<T: PersistentModel>(_ type: T.Type, context: ModelContext) -> T? {
@@ -35,8 +39,8 @@ enum HabitWidgetSyncService {
         return (try? context.fetch(descriptor))?.first
     }
 
-    private static func fetchAll<T: PersistentModel>(_ type: T.Type, context: ModelContext) -> [T] {
-        let descriptor = FetchDescriptor<T>()
+    private static func fetchHabits(context: ModelContext) -> [Habit] {
+        let descriptor = FetchDescriptor<Habit>(sortBy: [SortDescriptor(\.createdAt, order: .forward)])
         return (try? context.fetch(descriptor)) ?? []
     }
 }
