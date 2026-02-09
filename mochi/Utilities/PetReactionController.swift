@@ -5,11 +5,20 @@ import SwiftUI
 @MainActor
 final class PetReactionController: ObservableObject {
     @Published var pulse: Int = 0
+    @Published var moodBoostPulse: Int = 0
     @Published var coinBurst: CoinBurst?
     @Published var statBursts: [StatBurst] = []
 
     func trigger() {
         pulse += 1
+    }
+
+    @discardableResult
+    func triggerMoodBoostIfNeeded(energyDelta: Int, hungerDelta: Int, cleanlinessDelta: Int) -> Bool {
+        let shouldBoost = energyDelta > 0 || hungerDelta > 0 || cleanlinessDelta > 0
+        guard shouldBoost else { return false }
+        moodBoostPulse += 1
+        return true
     }
 
     func triggerCoins(amount: Int) {

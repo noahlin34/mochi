@@ -107,6 +107,11 @@ struct HabitsView: View {
             let energyDelta = pet.energy - previousEnergy
             let hungerDelta = pet.hunger - previousHunger
             let cleanlinessDelta = pet.cleanliness - previousCleanliness
+            reactionController.triggerMoodBoostIfNeeded(
+                energyDelta: energyDelta,
+                hungerDelta: hungerDelta,
+                cleanlinessDelta: cleanlinessDelta
+            )
             if energyDelta > 0 {
                 reactionController.triggerStatBurst(kind: .energy, amount: energyDelta)
             }

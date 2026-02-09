@@ -12,8 +12,24 @@ struct HomeView: View {
     @Bindable var appState: AppState
 
     @State private var isBouncing = false
+    @State private var moodBoostMessageIndex = -1
+    @State private var moodBoostEndsAt: Date?
+    @State private var moodBoostToken = UUID()
+    @State private var isHappyDancing = false
+    @State private var showExclamationBadge = false
+    @State private var moodBoostResetTask: Task<Void, Never>?
+    @State private var danceTask: Task<Void, Never>?
+    @State private var danceTilt: Double = 0
+    @State private var danceLift: CGFloat = 0
 
     private let engine = GameEngine()
+    private let moodBoostDuration: TimeInterval = 3
+    private let moodBoostMessages = [
+        "Yay! You are taking great care of me!",
+        "I love hanging out with you!",
+        "This is so much fun!",
+        "My mood is way up now!"
+    ]
 
     var body: some View {
         ScrollView {
@@ -32,6 +48,12 @@ struct HomeView: View {
         .background(Color.appBackground)
         .onChange(of: reactionController.pulse) { _ in
             triggerBounce()
+        }
+        .onChange(of: reactionController.moodBoostPulse) { _ in
+            triggerMoodBoostCelebration()
+        }
+        .onDisappear {
+            cancelMoodBoostTasks()
         }
     }
 
@@ -58,16 +80,29 @@ struct HomeView: View {
                 .padding(16)
 
             VStack(spacing: 8) {
-                SpeechBubble(text: "Hi \(appState.userDisplayName)! \(petStatusMessage)")
+                SpeechBubble(text: "Hi \(appState.userDisplayName)! \(petChatMessage)")
                     .padding(.top, 10)
 
-                PetView(
-                    species: pet.species,
-                    baseOutfitSymbol: equippedBaseOutfit?.assetName,
-                    overlaySymbols: equippedOverlayOutfits.map(\.assetName),
-                    isBouncing: isBouncing
-                )
-                    .frame(height: 170)
+                ZStack(alignment: .topTrailing) {
+                    PetView(
+                        species: pet.species,
+                        baseOutfitSymbol: equippedBaseOutfit?.assetName,
+                        overlaySymbols: equippedOverlayOutfits.map(\.assetName),
+                        isBouncing: isBouncing
+                    )
+                    if showExclamationBadge {
+                        Image(systemName: "exclamationmark.circle.fill")
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundStyle(AppColors.accentPeach)
+                            .shadow(color: .black.opacity(0.2), radius: 6, x: 0, y: 3)
+                            .offset(x: 20, y: -8)
+                            .transition(.scale(scale: 0.7).combined(with: .opacity))
+                    }
+                }
+                .rotationEffect(.degrees(danceTilt))
+                .offset(y: danceLift)
+                .scaleEffect(isHappyDancing ? 1.04 : 1.0)
+                .frame(height: 170)
             }
             .padding(.horizontal, 12)
         }
@@ -149,6 +184,22 @@ struct HomeView: View {
         items.first { $0.type == .room && $0.equipped }
     }
 
+    private var petChatMessage: String {
+        guard isMoodBoostActive else {
+            return petStatusMessage
+        }
+        guard !moodBoostMessages.isEmpty else {
+            return petStatusMessage
+        }
+        let safeIndex = max(0, moodBoostMessageIndex) % moodBoostMessages.count
+        return moodBoostMessages[safeIndex]
+    }
+
+    private var isMoodBoostActive: Bool {
+        guard let moodBoostEndsAt else { return false }
+        return moodBoostEndsAt > Date()
+    }
+
     private var petStatusMessage: String {
         let stats = [
             ("hunger", pet.hunger),
@@ -219,6 +270,11 @@ struct HomeView: View {
             let energyDelta = pet.energy - previousEnergy
             let hungerDelta = pet.hunger - previousHunger
             let cleanlinessDelta = pet.cleanliness - previousCleanliness
+            reactionController.triggerMoodBoostIfNeeded(
+                energyDelta: energyDelta,
+                hungerDelta: hungerDelta,
+                cleanlinessDelta: cleanlinessDelta
+            )
             if energyDelta > 0 {
                 reactionController.triggerStatBurst(kind: .energy, amount: energyDelta)
             }
@@ -230,6 +286,99 @@ struct HomeView: View {
             }
             HabitWidgetSyncService.sync(context: modelContext)
         }
+    }
+
+    private func triggerMoodBoostCelebration() {
+        advanceMoodBoostMessage()
+
+        let token = UUID()
+        moodBoostToken = token
+        moodBoostEndsAt = Date().addingTimeInterval(moodBoostDuration)
+
+        moodBoostResetTask?.cancel()
+        moodBoostResetTask = Task {
+            try? await Task.sleep(nanoseconds: UInt64(moodBoostDuration * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                guard moodBoostToken == token else { return }
+                moodBoostEndsAt = nil
+                showExclamationBadge = false
+                isHappyDancing = false
+                danceTilt = 0
+                danceLift = 0
+            }
+        }
+
+        startHappyDance(token: token)
+    }
+
+    private func advanceMoodBoostMessage() {
+        guard !moodBoostMessages.isEmpty else { return }
+        if moodBoostMessageIndex < 0 {
+            moodBoostMessageIndex = 0
+            return
+        }
+        moodBoostMessageIndex = (moodBoostMessageIndex + 1) % moodBoostMessages.count
+    }
+
+    private func startHappyDance(token: UUID) {
+        danceTask?.cancel()
+
+        withAnimation(.spring(response: 0.2, dampingFraction: 0.62)) {
+            isHappyDancing = true
+            showExclamationBadge = true
+            danceLift = -9
+            danceTilt = -10
+        }
+
+        danceTask = Task {
+            let danceSteps: [(tilt: Double, lift: CGFloat, delay: UInt64)] = [
+                (10, -4, 130_000_000),
+                (-9, -8, 130_000_000),
+                (8, -3, 130_000_000),
+                (0, 0, 160_000_000)
+            ]
+
+            for step in danceSteps {
+                try? await Task.sleep(nanoseconds: step.delay)
+                guard !Task.isCancelled else { return }
+                let isCurrentToken = await MainActor.run { moodBoostToken == token }
+                guard isCurrentToken else { return }
+
+                await MainActor.run {
+                    withAnimation(.spring(response: 0.17, dampingFraction: 0.65)) {
+                        danceTilt = step.tilt
+                        danceLift = step.lift
+                    }
+                }
+            }
+
+            try? await Task.sleep(nanoseconds: 180_000_000)
+            guard !Task.isCancelled else { return }
+            let isCurrentToken = await MainActor.run { moodBoostToken == token }
+            guard isCurrentToken else { return }
+
+            await MainActor.run {
+                withAnimation(.easeIn(duration: 0.18)) {
+                    showExclamationBadge = false
+                }
+                withAnimation(.easeOut(duration: 0.2)) {
+                    isHappyDancing = false
+                }
+            }
+        }
+    }
+
+    private func cancelMoodBoostTasks() {
+        moodBoostResetTask?.cancel()
+        moodBoostResetTask = nil
+        danceTask?.cancel()
+        danceTask = nil
+        moodBoostEndsAt = nil
+        showExclamationBadge = false
+        isHappyDancing = false
+        danceTilt = 0
+        danceLift = 0
     }
 
     private func triggerBounce() {
