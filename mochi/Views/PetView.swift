@@ -146,7 +146,7 @@ private struct PetOverlayItemView: View {
         case "top_hat":
             return topHatPlacement(for: species)
         case "baseball_hat":
-            return topHatPlacement(for: species)
+            return baseballHatPlacement(for: species)
         default:
             return OverlayPlacement(size: CGSize(width: 160, height: 160), offset: .zero, rotationDegrees: 0)
         }
@@ -174,6 +174,21 @@ private struct PetOverlayItemView: View {
             return OverlayPlacement(size: CGSize(width: 76, height: 76), offset: CGSize(width: 0, height: -60), rotationDegrees: 0)
         case .lion:
             return OverlayPlacement(size: CGSize(width: 90, height: 90), offset: CGSize(width: 0, height: -60), rotationDegrees: 0)
+        }
+    }
+
+    private func baseballHatPlacement(for species: PetSpecies) -> OverlayPlacement {
+        switch species {
+        case .cat:
+            return OverlayPlacement(size: CGSize(width: 84, height: 84), offset: CGSize(width: 2, height: -52), rotationDegrees: 5)
+        case .dog:
+            return OverlayPlacement(size: CGSize(width: 88, height: 88), offset: CGSize(width: 3, height: -54), rotationDegrees: 6)
+        case .bunny:
+            return OverlayPlacement(size: CGSize(width: 80, height: 80), offset: CGSize(width: 2, height: -67), rotationDegrees: 4)
+        case .penguin:
+            return OverlayPlacement(size: CGSize(width: 74, height: 74), offset: CGSize(width: 2, height: -60), rotationDegrees: 5)
+        case .lion:
+            return OverlayPlacement(size: CGSize(width: 88, height: 88), offset: CGSize(width: 3, height: -56), rotationDegrees: 5)
         }
     }
 
