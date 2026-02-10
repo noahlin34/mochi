@@ -144,6 +144,8 @@ private struct PetOverlayItemView: View {
         switch assetName {
         case "top_hat":
             return topHatPlacement(for: species)
+        case "baseball_hat":
+            return topHatPlacement(for: species)
         default:
             return OverlayPlacement(size: CGSize(width: 160, height: 160), offset: .zero, rotationDegrees: 0)
         }

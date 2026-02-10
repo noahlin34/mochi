@@ -4,9 +4,12 @@ import UIKit
 
 @main
 struct MochiApp: App {
+    @StateObject private var revenueCat = RevenueCatManager()
+
     init() {
         // Ensure the system tab bar never shows behind the custom one.
         UITabBar.appearance().isHidden = true
+        RevenueCatManager.configureSDKIfNeeded()
     }
 
     var sharedModelContainer: ModelContainer = {
@@ -53,6 +56,10 @@ struct MochiApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(revenueCat)
+                .task {
+                    revenueCat.start()
+                }
                 .preferredColorScheme(.light)
         }
         .modelContainer(sharedModelContainer)

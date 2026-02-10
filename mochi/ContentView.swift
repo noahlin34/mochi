@@ -169,4 +169,5 @@ struct ContentView: View {
     return ContentView()
         .modelContainer(preview.container)
         .environmentObject(PetReactionController())
+        .environmentObject(RevenueCatManager())
 }

@@ -1,8 +1,11 @@
 import SwiftUI
 import SwiftData
+import RevenueCat
+import RevenueCatUI
 
 struct SettingsView: View {
     @Query(sort: \Habit.createdAt) private var habits: [Habit]
+    @EnvironmentObject private var revenueCat: RevenueCatManager
     @Environment(\.tabBarHeight) private var tabBarHeight
 
     @Bindable var pet: Pet
@@ -12,6 +15,8 @@ struct SettingsView: View {
     @State private var showAppearanceAlert = false
     @State private var showSupportAlert = false
     @State private var showNotificationsAlert = false
+    @State private var showingCustomerCenter = false
+    @State private var offeringToPresent: Offering?
 
     @AppStorage("notificationsEnabled") private var notificationsEnabled = false
     @AppStorage("reminderHour") private var reminderHour: Int = 9
@@ -45,6 +50,7 @@ struct SettingsView: View {
                     headerCard
                     profileCard
                     progressSection
+                    subscriptionSection
                     preferencesSection
                     developerSection
                     footerCard
@@ -80,7 +86,24 @@ struct SettingsView: View {
             } message: {
                 Text("Support is coming soon. For now, reach out in the repo issues.")
             }
+            .alert(
+                "Subscription Error",
+                isPresented: Binding(
+                    get: { revenueCat.lastErrorMessage != nil },
+                    set: { newValue in
+                        if !newValue {
+                            revenueCat.lastErrorMessage = nil
+                        }
+                    }
+                )
+            ) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(revenueCat.lastErrorMessage ?? "")
+            }
         }
+        .presentPaywall(offering: $offeringToPresent, presentationMode: .sheet)
+        .presentCustomerCenter(isPresented: $showingCustomerCenter, presentationMode: .sheet)
     }
 
     private var headerCard: some View {
@@ -168,6 +191,51 @@ struct SettingsView: View {
                     value: "\(pet.xp)"
                 )
             }
+        }
+    }
+
+    private var subscriptionSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Subscription")
+                .font(.headline)
+                .foregroundStyle(AppColors.textPrimary)
+
+            SettingsLinkRow(
+                icon: "star.circle.fill",
+                iconTint: AppColors.cardYellow,
+                title: revenueCat.hasMochiPro ? "Mochi Pro Active" : "Upgrade to Mochi Pro",
+                actionTitle: "Open →",
+                action: {
+                    Task {
+                        if revenueCat.currentOffering == nil {
+                            await revenueCat.loadCurrentOffering()
+                        }
+                        offeringToPresent = revenueCat.currentOffering
+                    }
+                }
+            )
+
+            SettingsLinkRow(
+                icon: "creditcard.fill",
+                iconTint: AppColors.cardGreen,
+                title: "Manage Subscription",
+                actionTitle: "Open →",
+                action: {
+                    showingCustomerCenter = true
+                }
+            )
+
+            SettingsLinkRow(
+                icon: "arrow.clockwise.circle.fill",
+                iconTint: AppColors.cardPurple,
+                title: "Restore Purchases",
+                actionTitle: "Run →",
+                action: {
+                    Task {
+                        await revenueCat.restorePurchases()
+                    }
+                }
+            )
         }
     }
 
@@ -609,4 +677,5 @@ private struct SettingsEditSheet: View {
     return SettingsView(pet: preview.pet, appState: preview.appState)
         .modelContainer(preview.container)
         .environmentObject(PetReactionController())
+        .environmentObject(RevenueCatManager())
 }

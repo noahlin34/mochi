@@ -1,9 +1,12 @@
 import SwiftUI
 import SwiftData
+import RevenueCat
+import RevenueCatUI
 
 struct HabitsView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var reactionController: PetReactionController
+    @EnvironmentObject private var revenueCat: RevenueCatManager
     @Environment(\.tabBarHeight) private var tabBarHeight
     @Query(sort: \Habit.createdAt) private var habits: [Habit]
 
@@ -13,7 +16,9 @@ struct HabitsView: View {
     @State private var showingForm = false
     @State private var habitToEdit: Habit?
     @State private var isBouncing = false
+    @State private var offeringToPresent: Offering?
 
+    private let freeHabitLimit = 3
     private let engine = GameEngine()
 
     var body: some View {
@@ -21,6 +26,12 @@ struct HabitsView: View {
             ScrollView {
                 VStack(spacing: 16) {
                     headerCard
+                    if hasReachedFreeLimit {
+                        Text("Free plan supports up to \(freeHabitLimit) habits. Upgrade to Mochi Pro for unlimited habits.")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
 
                     if habits.isEmpty {
                         ContentUnavailableView("No Habits Yet", systemImage: "sparkles", description: Text("Add your first habit to care for your pet."))
@@ -51,8 +62,9 @@ struct HabitsView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        habitToEdit = nil
-                        showingForm = true
+                        Task {
+                            await handleAddTapped()
+                        }
                     } label: {
                         Label("Add Habit", systemImage: "plus")
                     }
@@ -65,10 +77,33 @@ struct HabitsView: View {
         .onChange(of: reactionController.pulse) { _ in
             triggerBounce()
         }
+        .presentPaywall(
+            offering: $offeringToPresent,
+            presentationMode: .sheet
+        )
+        .alert(
+            "Subscription Error",
+            isPresented: Binding(
+                get: { revenueCat.lastErrorMessage != nil },
+                set: { newValue in
+                    if !newValue {
+                        revenueCat.lastErrorMessage = nil
+                    }
+                }
+            )
+        ) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(revenueCat.lastErrorMessage ?? "")
+        }
     }
 
     private var tabBarPadding: CGFloat {
         max(tabBarHeight + 16, 96)
+    }
+
+    private var hasReachedFreeLimit: Bool {
+        !revenueCat.hasMochiPro && habits.count >= freeHabitLimit
     }
 
     private var headerCard: some View {
@@ -128,6 +163,20 @@ struct HabitsView: View {
     private func deleteHabit(_ habit: Habit) {
         modelContext.delete(habit)
         HabitWidgetSyncService.sync(context: modelContext)
+    }
+
+    private func handleAddTapped() async {
+        habitToEdit = nil
+
+        if hasReachedFreeLimit {
+            if revenueCat.currentOffering == nil {
+                await revenueCat.loadCurrentOffering()
+            }
+            offeringToPresent = revenueCat.currentOffering
+            return
+        }
+
+        showingForm = true
     }
 
     private func triggerBounce() {
@@ -237,4 +286,5 @@ private struct HabitListCard: View {
     return HabitsView(pet: preview.pet, appState: preview.appState)
         .modelContainer(preview.container)
         .environmentObject(PetReactionController())
+        .environmentObject(RevenueCatManager())
 }

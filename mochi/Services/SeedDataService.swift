@@ -85,6 +85,7 @@ enum SeedDataService {
         CatalogSeed(type: .outfit, name: "Sparkle Charm", price: 45, assetName: "sparkles", petSpecies: .bunny),
         CatalogSeed(type: .outfit, name: "Snow Scarf", price: 35, assetName: "scarf", petSpecies: .penguin),
         CatalogSeed(type: .outfit, name: "Top Hat", price: 50, assetName: "top_hat", petSpecies: nil, equipStyle: .overlay),
+        CatalogSeed(type: .outfit, name: "Baseball Hat", price: 50, assetName: "baseball_hat", petSpecies: nil, equipStyle: .overlay),
         CatalogSeed(type: .room, name: "Cozy Home", price: 40, assetName: "house"),
         CatalogSeed(type: .room, name: "Beach Resort", price: 55, assetName: "beach"),
         CatalogSeed(type: .room, name: "Dreamy Bed", price: 70, assetName: "bed.double"),
