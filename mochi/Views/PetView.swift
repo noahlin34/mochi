@@ -112,12 +112,13 @@ private struct PetOverlayItemView: View {
     var body: some View {
         if let imageName = resolvedImageName() {
             let placement = resolvedPlacement(for: imageName)
+            let chroma = resolvedChromaSettings(for: imageName)
             ChromaKeyedImage(
                 name: imageName,
                 applyChromaKey: true,
                 keyColor: UIColor(red: 0.0, green: 1.0, blue: 0.0, alpha: 1.0),
-                threshold: 0.18,
-                smoothing: 0.05,
+                threshold: chroma.threshold,
+                smoothing: chroma.smoothing,
                 resizable: true,
                 contentMode: .fit
             )
@@ -151,6 +152,16 @@ private struct PetOverlayItemView: View {
         }
     }
 
+    private func resolvedChromaSettings(for imageName: String) -> ChromaSettings {
+        let targetAsset = imageName == assetName ? assetName : imageName
+        switch targetAsset {
+        case "baseball_hat":
+            return ChromaSettings(threshold: 0.5, smoothing: 0.03)
+        default:
+            return ChromaSettings(threshold: 0.18, smoothing: 0.05)
+        }
+    }
+
     private func topHatPlacement(for species: PetSpecies) -> OverlayPlacement {
         switch species {
         case .cat:
@@ -180,6 +191,11 @@ private struct PetOverlayItemView: View {
         let size: CGSize
         let offset: CGSize
         let rotationDegrees: Double
+    }
+
+    private struct ChromaSettings {
+        let threshold: CGFloat
+        let smoothing: CGFloat
     }
 }
 
