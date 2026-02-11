@@ -7,6 +7,7 @@ struct SettingsView: View {
     @Query(sort: \Habit.createdAt) private var habits: [Habit]
     @EnvironmentObject private var revenueCat: RevenueCatManager
     @Environment(\.tabBarHeight) private var tabBarHeight
+    @Environment(\.openURL) private var openURL
 
     @Bindable var pet: Pet
     @Bindable var appState: AppState
@@ -17,6 +18,8 @@ struct SettingsView: View {
     @State private var showNotificationsAlert = false
     @State private var showingCustomerCenter = false
     @State private var offeringToPresent: Offering?
+    @State private var footerToastMessage: String?
+    @State private var footerToastDismissTask: Task<Void, Never>?
 
     @AppStorage("notificationsEnabled") private var notificationsEnabled = false
     @AppStorage("reminderHour") private var reminderHour: Int = 9
@@ -42,6 +45,9 @@ struct SettingsView: View {
         GridItem(.flexible(), spacing: 12),
         GridItem(.flexible(), spacing: 12)
     ]
+    private let privacyPolicyURL = "https://noahlin.ca/privacy"
+    private let termsOfServiceURL = "https://noahlin.ca/terms"
+    private let aboutTagline = "Build better habits with your cozy pet friend."
 
     var body: some View {
         NavigationStack {
@@ -101,6 +107,19 @@ struct SettingsView: View {
             } message: {
                 Text(revenueCat.lastErrorMessage ?? "")
             }
+            .overlay(alignment: .bottom) {
+                if let footerToastMessage {
+                    SettingsFooterToast(message: footerToastMessage)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, max(tabBarPadding - 20, 76))
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .allowsHitTesting(false)
+                }
+            }
+            .animation(.easeInOut(duration: 0.2), value: footerToastMessage != nil)
+        }
+        .onDisappear {
+            footerToastDismissTask?.cancel()
         }
         .presentPaywall(offering: $offeringToPresent, presentationMode: .sheet)
         .presentCustomerCenter(isPresented: $showingCustomerCenter, presentationMode: .sheet)
@@ -398,9 +417,27 @@ struct SettingsView: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
 
-            Text("Privacy  •  Terms  •  About")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+            HStack(spacing: 6) {
+                footerActionButton(title: "Privacy") {
+                    openLegalURL(privacyPolicyURL, label: "Privacy Policy")
+                }
+
+                Text("•")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+
+                footerActionButton(title: "Terms") {
+                    openLegalURL(termsOfServiceURL, label: "Terms of Service")
+                }
+
+                Text("•")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+
+                footerActionButton(title: "About") {
+                    showAboutToast()
+                }
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(16)
@@ -449,6 +486,55 @@ struct SettingsView: View {
                 pet[keyPath: keyPath] = Int(newValue.rounded())
             }
         )
+    }
+
+    private func footerActionButton(title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var aboutToastMessage: String {
+        "\(appVersionText) • \(aboutTagline)"
+    }
+
+    private var appVersionText: String {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
+        return "mochi v\(version) (build \(build))"
+    }
+
+    private func openLegalURL(_ urlString: String, label: String) {
+        guard let url = URL(string: urlString), let scheme = url.scheme?.lowercased(), scheme == "https" || scheme == "http" else {
+            showFooterToast("Could not open \(label) right now.")
+            return
+        }
+
+        openURL(url) { accepted in
+            guard !accepted else { return }
+            Task { @MainActor in
+                showFooterToast("Could not open \(label) right now.")
+            }
+        }
+    }
+
+    private func showAboutToast() {
+        showFooterToast(aboutToastMessage)
+    }
+
+    private func showFooterToast(_ message: String) {
+        footerToastDismissTask?.cancel()
+        footerToastMessage = message
+
+        footerToastDismissTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            guard !Task.isCancelled else { return }
+            footerToastMessage = nil
+            footerToastDismissTask = nil
+        }
     }
 }
 
@@ -669,6 +755,35 @@ private struct SettingsEditSheet: View {
                 }
             }
         }
+    }
+}
+
+private struct SettingsFooterToast: View {
+    let message: String
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "info.circle.fill")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(AppColors.accentPurple)
+
+            Text(message)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(AppColors.textPrimary)
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(.white)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(AppColors.cardPurple.opacity(0.45), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.12), radius: 12, x: 0, y: 8)
     }
 }
 
