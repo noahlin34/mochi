@@ -6,6 +6,11 @@ CozyPet Habits is a Tamagotchi-style habit tracker where daily actions care for 
 ![Swift](https://img.shields.io/badge/Swift-5.9%2B-F05138?style=for-the-badge&logo=swift)
 ![SwiftUI](https://img.shields.io/badge/SwiftUI-UI-0A84FF?style=for-the-badge)
 
+<p align="center"><img width="25%" height="25%" alt="screenshot-1" src="https://github.com/user-attachments/assets/a9c7909f-a1fc-4bb9-986a-390d5852a6b7" />
+<img width="25%" height="25%" alt="screenshot-2" src="https://github.com/user-attachments/assets/dc2268c9-1316-44e4-b73c-d0e4cda8768e" />
+</p>
+
+
 ## Highlights
 - Offline-first habit tracking with a pet-care loop.
 - Rewards, coins, and cosmetic shop.
