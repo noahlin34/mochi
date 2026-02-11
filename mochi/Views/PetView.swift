@@ -186,7 +186,7 @@ private struct PetOverlayItemView: View {
         case .bunny:
             return OverlayPlacement(size: CGSize(width: 80, height: 80), offset: CGSize(width: 2, height: -67), rotationDegrees: 4)
         case .penguin:
-            return OverlayPlacement(size: CGSize(width: 74, height: 74), offset: CGSize(width: 2, height: -60), rotationDegrees: 5)
+            return OverlayPlacement(size: CGSize(width: 74, height: 74), offset: CGSize(width: -5, height: -50), rotationDegrees: 5)
         case .lion:
             return OverlayPlacement(size: CGSize(width: 88, height: 88), offset: CGSize(width: 3, height: -56), rotationDegrees: 5)
         }

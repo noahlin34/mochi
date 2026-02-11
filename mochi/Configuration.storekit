@@ -1,0 +1,115 @@
+{
+  "identifier" : "C3A91F4E",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "9D74B0C2",
+      "localizations" : [
+        {
+          "description" : "Unlock all Mochi Pro premium features.",
+          "displayName" : "Mochi Pro",
+          "locale" : "en_US"
+        }
+      ],
+      "name" : "Mochi Pro",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "3.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "1A2F0C9E",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Mochi Pro monthly subscription.",
+              "displayName" : "Mochi Pro Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "mochi_pro_1mo",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Mochi Pro Monthly",
+          "subscriptionGroupID" : "9D74B0C2",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "19.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "5B8D2E71",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Mochi Pro 6-month subscription.",
+              "displayName" : "Mochi Pro 6 Months",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "mochi_pro_6mo",
+          "recurringSubscriptionPeriod" : "P6M",
+          "referenceName" : "Mochi Pro 6 Months",
+          "subscriptionGroupID" : "9D74B0C2",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "29.99",
+          "familyShareable" : false,
+          "groupNumber" : 3,
+          "internalID" : "7E4C1AB5",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Mochi Pro yearly subscription.",
+              "displayName" : "Mochi Pro Yearly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "mochi_pro_1yr",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Mochi Pro Yearly",
+          "subscriptionGroupID" : "9D74B0C2",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

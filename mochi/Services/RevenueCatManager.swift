@@ -4,7 +4,7 @@ import RevenueCat
 
 @MainActor
 final class RevenueCatManager: NSObject, ObservableObject {
-    static let apiKey = "test_rHwJLSfrEHQnBvUKLpiIclbLhrS"
+    static let apiKey = "appl_mqXkjELSloDKZbAQVbenpxYfSSV"
     static let mochiProEntitlementID = "Mochi Pro"
 
     @Published private(set) var customerInfo: CustomerInfo?
