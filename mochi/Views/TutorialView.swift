@@ -117,11 +117,6 @@ struct TutorialView: View {
                 .font(.title2.bold())
                 .foregroundStyle(AppColors.textPrimary)
             Spacer()
-            Button("Skip") {
-                finishTutorial()
-            }
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(AppColors.accentPurple)
         }
         .padding(.horizontal, 24)
     }
