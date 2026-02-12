@@ -45,6 +45,10 @@ struct SettingsView: View {
         GridItem(.flexible(), spacing: 12),
         GridItem(.flexible(), spacing: 12)
     ]
+    private let speciesColumns = [
+        GridItem(.flexible(), spacing: 12),
+        GridItem(.flexible(), spacing: 12)
+    ]
     private let privacyPolicyURL = "https://noahlin.ca/privacy"
     private let termsOfServiceURL = "https://noahlin.ca/terms"
     private let aboutTagline = "Build better habits with your cozy pet friend."
@@ -229,17 +233,14 @@ struct SettingsView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    ForEach(PetSpecies.allCases) { species in
-                        SpeciesSelectionCard(
-                            species: species,
-                            isSelected: pet.species == species,
-                            action: { setSpecies(species) }
-                        )
-                    }
+            LazyVGrid(columns: speciesColumns, spacing: 12) {
+                ForEach(PetSpecies.allCases) { species in
+                    SpeciesSelectionCard(
+                        species: species,
+                        isSelected: pet.species == species,
+                        action: { setSpecies(species) }
+                    )
                 }
-                .padding(.vertical, 2)
             }
         }
     }
@@ -817,18 +818,17 @@ private struct SpeciesSelectionCard: View {
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
                         .fill(AppColors.background)
 
-                    PetView(
-                        species: species,
-                        baseOutfitSymbol: nil,
-                        overlaySymbols: [],
-                        isBouncing: false
-                    )
-                    .scaleEffect(0.55)
+                    SpeciesCardPetPreview(species: species)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 4)
+                        .clipped()
                 }
-                .frame(height: 122)
+                .frame(height: 132)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
             .padding(12)
-            .frame(width: 170, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .background(isSelected ? AppColors.cardPurple.opacity(0.58) : .white)
             .overlay(
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -838,6 +838,35 @@ private struct SpeciesSelectionCard: View {
             .shadow(color: .black.opacity(0.06), radius: 10, x: 0, y: 6)
         }
         .buttonStyle(.plain)
+    }
+}
+
+private struct SpeciesCardPetPreview: View {
+    let species: PetSpecies
+
+    var body: some View {
+        PetView(
+            species: species,
+            baseOutfitSymbol: nil,
+            overlaySymbols: [],
+            isBouncing: false
+        )
+        .frame(width: 112, height: 112)
+        .scaleEffect(scale)
+        .allowsHitTesting(false)
+    }
+
+    private var scale: CGFloat {
+        switch species {
+        case .dog:
+            return 0.72
+        case .penguin:
+            return 0.70
+        case .lion:
+            return 0.70
+        case .cat, .bunny:
+            return 0.65
+        }
     }
 }
 
