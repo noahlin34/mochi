@@ -28,7 +28,6 @@ struct HomeView: View {
     private let engine = GameEngine()
     private let moodBoostDuration: TimeInterval = 3
     private let launchTipWindowDuration: TimeInterval = 30
-    private let launchTipRotationInterval: TimeInterval = 5
     private let moodBoostMessages = [
         "Yay! You are taking great care of me!",
         "I love hanging out with you!",
@@ -66,14 +65,14 @@ struct HomeView: View {
             triggerMoodBoostCelebration()
         }
         .onAppear {
-            startLaunchTipRotationIfNeeded()
+            startLaunchTipDisplayIfNeeded()
         }
         .onChange(of: appState.tutorialSeen) { _, newValue in
             guard newValue else { return }
-            startLaunchTipRotationIfNeeded()
+            startLaunchTipDisplayIfNeeded()
         }
         .onDisappear {
-            stopLaunchTipRotation()
+            stopLaunchTipDisplayCountdown()
             cancelMoodBoostTasks()
         }
     }
@@ -232,8 +231,8 @@ struct HomeView: View {
         )
     }
 
-    private func selectNextLaunchTip(previous: String?) -> String? {
-        LaunchTipRotationHelper.selectNextTip(tips: launchTips, previous: previous)
+    private func selectLaunchTip() -> String? {
+        LaunchTipRotationHelper.selectRandomTip(tips: launchTips)
     }
 
     private var petStatusMessage: String {
@@ -417,59 +416,43 @@ struct HomeView: View {
         danceLift = 0
     }
 
-    private func startLaunchTipRotationIfNeeded() {
+    private func startLaunchTipDisplayIfNeeded() {
         guard appState.tutorialSeen else { return }
 
         let now = Date()
 
         if launchTipsStartedAt == nil {
             launchTipsStartedAt = now
-            currentLaunchTip = selectNextLaunchTip(previous: nil)
+            currentLaunchTip = selectLaunchTip()
         }
 
         guard isLaunchTipWindowActive(now: now) else {
             currentLaunchTip = nil
-            stopLaunchTipRotation()
+            stopLaunchTipDisplayCountdown()
             return
         }
 
+        guard currentLaunchTip != nil else { return }
         guard launchTipTask == nil else { return }
 
+        let start = launchTipsStartedAt ?? now
+        let elapsed = now.timeIntervalSince(start)
+        let remaining = max(0, launchTipWindowDuration - elapsed)
+        guard remaining > 0 else {
+            currentLaunchTip = nil
+            stopLaunchTipDisplayCountdown()
+            return
+        }
+
         launchTipTask = Task { @MainActor in
-            while !Task.isCancelled {
-                let currentTime = Date()
-                guard isLaunchTipWindowActive(now: currentTime) else {
-                    currentLaunchTip = nil
-                    launchTipTask = nil
-                    return
-                }
-
-                let start = launchTipsStartedAt ?? currentTime
-                let elapsed = currentTime.timeIntervalSince(start)
-                let remaining = max(0, launchTipWindowDuration - elapsed)
-                let waitDuration = min(launchTipRotationInterval, remaining)
-
-                guard waitDuration > 0 else {
-                    currentLaunchTip = nil
-                    launchTipTask = nil
-                    return
-                }
-
-                try? await Task.sleep(nanoseconds: UInt64(waitDuration * 1_000_000_000))
-                guard !Task.isCancelled else { return }
-
-                guard isLaunchTipWindowActive(now: Date()) else {
-                    currentLaunchTip = nil
-                    launchTipTask = nil
-                    return
-                }
-
-                currentLaunchTip = selectNextLaunchTip(previous: currentLaunchTip)
-            }
+            try? await Task.sleep(nanoseconds: UInt64(remaining * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            currentLaunchTip = nil
+            launchTipTask = nil
         }
     }
 
-    private func stopLaunchTipRotation() {
+    private func stopLaunchTipDisplayCountdown() {
         launchTipTask?.cancel()
         launchTipTask = nil
     }

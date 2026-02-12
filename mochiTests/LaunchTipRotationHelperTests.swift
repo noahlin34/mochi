@@ -2,31 +2,40 @@ import XCTest
 @testable import mochi
 
 final class LaunchTipRotationHelperTests: XCTestCase {
-    func testSelectNextTipAvoidsImmediateRepeatWhenMultipleTipsExist() {
+    func testSelectRandomTipReturnsDeterministicChoiceWithInjectedGenerator() {
         var randomGenerator = PredictableRandomGenerator()
         let tips = ["Tip A", "Tip B", "Tip C"]
 
-        let next = LaunchTipRotationHelper.selectNextTip(
+        let next = LaunchTipRotationHelper.selectRandomTip(
             tips: tips,
-            previous: "Tip A",
             using: &randomGenerator
         )
 
-        XCTAssertEqual(next, "Tip B")
-        XCTAssertNotEqual(next, "Tip A")
+        XCTAssertEqual(next, "Tip A")
     }
 
-    func testSelectNextTipReturnsOnlyTipWhenSingleTipExists() {
+    func testSelectRandomTipReturnsOnlyTipWhenSingleTipExists() {
         var randomGenerator = PredictableRandomGenerator()
         let tips = ["Only Tip"]
 
-        let next = LaunchTipRotationHelper.selectNextTip(
+        let next = LaunchTipRotationHelper.selectRandomTip(
             tips: tips,
-            previous: "Only Tip",
             using: &randomGenerator
         )
 
         XCTAssertEqual(next, "Only Tip")
+    }
+
+    func testSelectRandomTipReturnsNilForEmptyTips() {
+        var randomGenerator = PredictableRandomGenerator()
+        let tips: [String] = []
+
+        let next = LaunchTipRotationHelper.selectRandomTip(
+            tips: tips,
+            using: &randomGenerator
+        )
+
+        XCTAssertNil(next)
     }
 
     func testWindowActiveBeforeThirtySecondsAndInactiveAtThirtySeconds() {
