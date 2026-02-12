@@ -267,9 +267,9 @@ struct StoreView: View {
             particles: makeSpendParticles(
                 from: sourcePoint,
                 to: targetPoint,
-                count: 8
+                count: 18
             ),
-            duration: 0.6
+            duration: 1.05
         )
 
         enqueueSpendAnimation(request)
@@ -333,7 +333,7 @@ struct StoreView: View {
 
         spendAnimationTask?.cancel()
         spendAnimationTask = Task {
-            let delay = duration + 0.12
+            let delay = duration + 0.2
             try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             guard !Task.isCancelled else { return }
             await MainActor.run {
@@ -361,21 +361,21 @@ struct StoreView: View {
         )
 
         return (0..<count).map { index in
-            let launchSpreadX = CGFloat.random(in: -8...8)
-            let launchSpreadY = CGFloat.random(in: -5...5)
-            let controlX = midpoint.x + CGFloat.random(in: -26...26)
-            let controlY = midpoint.y + CGFloat.random(in: -16...14)
-            let targetSpreadX = CGFloat.random(in: -12...12)
-            let targetSpreadY = CGFloat.random(in: -8...10)
+            let launchSpreadX = CGFloat.random(in: -16...16)
+            let launchSpreadY = CGFloat.random(in: -10...10)
+            let controlX = midpoint.x + CGFloat.random(in: -44...44)
+            let controlY = midpoint.y + CGFloat.random(in: -30...24)
+            let targetSpreadX = CGFloat.random(in: -18...18)
+            let targetSpreadY = CGFloat.random(in: -14...14)
 
             return ShopSpendParticle(
                 start: CGPoint(x: source.x + launchSpreadX, y: source.y + launchSpreadY),
                 control: CGPoint(x: controlX, y: controlY),
                 end: CGPoint(x: target.x + targetSpreadX, y: target.y + targetSpreadY),
-                size: CGFloat.random(in: 11...15),
-                delay: Double(index) * 0.018,
-                duration: 0.38 + Double.random(in: 0...0.13),
-                spinDegrees: Double.random(in: -40...40)
+                size: CGFloat.random(in: 16...24),
+                delay: Double(index) * 0.025,
+                duration: 0.72 + Double.random(in: 0...0.22),
+                spinDegrees: Double.random(in: -90...90)
             )
         }
     }
@@ -793,8 +793,9 @@ private struct ShopSpendParticleView: View {
         }
         .frame(width: particle.size, height: particle.size)
         .rotationEffect(.degrees(particle.spinDegrees * Double(progress)))
-        .scaleEffect(1 - (0.2 * progress))
+        .scaleEffect(1 - (0.1 * progress))
         .opacity(max(0, 1 - (1.2 * Double(progress))))
+        .shadow(color: AppColors.accentPeach.opacity(0.3), radius: 4, x: 0, y: 2)
         .position(currentPosition(progress: progress))
         .onAppear {
             withAnimation(
