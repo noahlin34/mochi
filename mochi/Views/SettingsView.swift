@@ -46,8 +46,9 @@ struct SettingsView: View {
         GridItem(.flexible(), spacing: 12)
     ]
     private let speciesColumns = [
+        GridItem(.flexible(), spacing: 10),
+        GridItem(.flexible(), spacing: 10),
         GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12)
     ]
     private let privacyPolicyURL = "https://noahlin.ca/privacy"
     private let termsOfServiceURL = "https://noahlin.ca/terms"
@@ -229,11 +230,11 @@ struct SettingsView: View {
                 .font(.headline)
                 .foregroundStyle(AppColors.textPrimary)
 
-            Text("Current: \(pet.species.displayName). Tap to switch instantly.")
+            Text("Current: \(pet.species.displayName)")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            LazyVGrid(columns: speciesColumns, spacing: 12) {
+            LazyVGrid(columns: speciesColumns, spacing: 10) {
                 ForEach(PetSpecies.allCases) { species in
                     SpeciesSelectionCard(
                         species: species,
@@ -799,45 +800,74 @@ private struct SpeciesSelectionCard: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 8) {
-                Circle()
-                    .fill(isSelected ? AppColors.accentPurple : AppColors.cardGreen.opacity(0.55))
-                    .frame(width: 24, height: 24)
-                    .overlay(
-                        Text(monogram)
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(isSelected ? Color.white : AppColors.textPrimary)
-                    )
+            VStack(spacing: 8) {
+                ZStack {
+                    Circle()
+                        .fill(accentColor.opacity(isSelected ? 0.95 : 0.25))
+                        .frame(width: 34, height: 34)
+
+                    Text(speciesEmoji)
+                        .font(.system(size: 18))
+                }
 
                 Text(species.displayName)
-                    .font(.subheadline.weight(.semibold))
+                    .font(.caption.weight(.semibold))
                     .foregroundStyle(AppColors.textPrimary)
                     .lineLimit(1)
 
-                Spacer(minLength: 0)
-
                 if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 16, weight: .semibold))
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(AppColors.accentPurple)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(.white.opacity(0.85))
+                        .clipShape(Capsule())
                 }
             }
-            .padding(.horizontal, 12)
-            .frame(height: 52)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 10)
+            .frame(height: 92)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(isSelected ? AppColors.cardPurple.opacity(0.58) : .white)
+            .background(isSelected ? accentColor.opacity(0.22) : .white)
             .overlay(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(isSelected ? AppColors.accentPurple : Color.black.opacity(0.08), lineWidth: isSelected ? 2 : 1)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(isSelected ? accentColor : Color.black.opacity(0.08), lineWidth: isSelected ? 2 : 1)
             )
-            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .shadow(color: .black.opacity(0.06), radius: 10, x: 0, y: 6)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
         }
         .buttonStyle(.plain)
     }
 
-    private var monogram: String {
-        String(species.displayName.prefix(1)).uppercased()
+    private var speciesEmoji: String {
+        switch species {
+        case .cat:
+            return "🐱"
+        case .dog:
+            return "🐶"
+        case .bunny:
+            return "🐰"
+        case .penguin:
+            return "🐧"
+        case .lion:
+            return "🦁"
+        }
+    }
+
+    private var accentColor: Color {
+        switch species {
+        case .cat:
+            return AppColors.cardPurple
+        case .dog:
+            return AppColors.cardPeach
+        case .bunny:
+            return AppColors.cardGreen
+        case .penguin:
+            return AppColors.cardYellow
+        case .lion:
+            return AppColors.mutedPurple
+        }
     }
 }
 
