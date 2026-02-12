@@ -4,12 +4,20 @@ import SwiftData
 struct StoreView: View {
     @EnvironmentObject private var reactionController: PetReactionController
     @Environment(\.tabBarHeight) private var tabBarHeight
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query(sort: \InventoryItem.createdAt) private var items: [InventoryItem]
 
     @Bindable var pet: Pet
 
     @State private var selectedCategory: StoreCategory = .outfits
     @State private var previewItem: InventoryItem?
+    @State private var displayedCoins: Int = 0
+    @State private var pendingSpendAnimations: [ShopSpendAnimationRequest] = []
+    @State private var activeSpendAnimation: ShopSpendAnimationRequest?
+    @State private var coinPillFrame: CGRect = .zero
+    @State private var buyButtonFrames: [UUID: CGRect] = [:]
+    @State private var coinPillPulseToken: Int = 0
+    @State private var spendAnimationTask: Task<Void, Never>?
     @AppStorage("storeShowAllItems") private var showAllItems = false
 
     private let columns = [
@@ -44,8 +52,16 @@ struct StoreView: View {
                 .padding(.horizontal, 20)
                 .padding(.bottom, tabBarPadding)
             }
+            .coordinateSpace(name: ShopAnimationCoordinateSpace.name)
             .scrollIndicators(.hidden)
             .background(Color.appBackground)
+            .overlay(alignment: .topLeading) {
+                ShopSpendParticlesOverlay(
+                    request: activeSpendAnimation,
+                    reduceMotion: reduceMotion
+                )
+                .allowsHitTesting(false)
+            }
             .navigationTitle("Shop")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -54,6 +70,9 @@ struct StoreView: View {
                 }
             }
         }
+        .onAppear {
+            displayedCoins = pet.coins
+        }
         .onChange(of: selectedCategory) { _, _ in
             previewItem = nil
         }
@@ -61,6 +80,27 @@ struct StoreView: View {
             if !showAllItems, let previewItem, !previewItem.isAvailable(for: pet.species) {
                 self.previewItem = nil
             }
+        }
+        .onChange(of: pet.coins) { _, newValue in
+            if activeSpendAnimation == nil && pendingSpendAnimations.isEmpty {
+                let duration = reduceMotion ? 0.2 : 0.45
+                withAnimation(.easeOut(duration: duration)) {
+                    displayedCoins = newValue
+                }
+            }
+        }
+        .onPreferenceChange(ShopCoinPillFramePreferenceKey.self) { frame in
+            guard frame != .zero else { return }
+            coinPillFrame = frame
+        }
+        .onPreferenceChange(ShopBuyButtonFramePreferenceKey.self) { frames in
+            buyButtonFrames = frames
+        }
+        .onDisappear {
+            spendAnimationTask?.cancel()
+            spendAnimationTask = nil
+            activeSpendAnimation = nil
+            pendingSpendAnimations.removeAll()
         }
     }
 
@@ -74,23 +114,11 @@ struct StoreView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
-            HStack(spacing: 8) {
-                Image(systemName: "circle.fill")
-                    .font(.system(size: 12))
-                    .foregroundStyle(AppColors.accentPeach)
-                Text("\(pet.coins)")
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(AppColors.textPrimary)
-                Text("coins")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Spacer()
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .background(.white)
-            .clipShape(Capsule())
-            .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
+            AnimatedShopCoinPill(
+                coins: displayedCoins,
+                pulseToken: coinPillPulseToken,
+                reduceMotion: reduceMotion
+            )
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
@@ -225,7 +253,27 @@ struct StoreView: View {
     private func buy(_ item: InventoryItem) {
         guard item.isAvailable(for: pet.species) else { return }
         guard !item.owned, pet.coins >= item.price else { return }
-        pet.coins -= item.price
+        let coinsFrom = pet.coins
+        let coinsTo = coinsFrom - item.price
+        let fallbackTarget = buyButtonFrames[item.id]?.center
+        let sourcePoint = resolvedCoinSourcePoint(fallbackTarget: fallbackTarget)
+        let targetPoint = fallbackTarget ?? CGPoint(x: sourcePoint.x, y: sourcePoint.y + 56)
+
+        let request = ShopSpendAnimationRequest(
+            coinsFrom: coinsFrom,
+            coinsTo: coinsTo,
+            sourcePoint: sourcePoint,
+            targetPoint: targetPoint,
+            particles: makeSpendParticles(
+                from: sourcePoint,
+                to: targetPoint,
+                count: 8
+            ),
+            duration: 0.6
+        )
+
+        enqueueSpendAnimation(request)
+        pet.coins = coinsTo
         item.owned = true
         equip(item)
         Haptics.light()
@@ -256,6 +304,79 @@ struct StoreView: View {
             item.equipped = false
         } else {
             equip(item)
+        }
+    }
+
+    private func enqueueSpendAnimation(_ request: ShopSpendAnimationRequest) {
+        pendingSpendAnimations.append(request)
+        runNextSpendAnimationIfNeeded()
+    }
+
+    private func runNextSpendAnimationIfNeeded() {
+        guard activeSpendAnimation == nil else { return }
+        guard !pendingSpendAnimations.isEmpty else { return }
+        let next = pendingSpendAnimations.removeFirst()
+        startSpendAnimation(next)
+    }
+
+    private func startSpendAnimation(_ request: ShopSpendAnimationRequest) {
+        activeSpendAnimation = request
+        let duration = reduceMotion ? 0.2 : request.duration
+
+        if reduceMotion {
+            coinPillPulseToken += 1
+        }
+
+        withAnimation(.easeOut(duration: duration)) {
+            displayedCoins = request.coinsTo
+        }
+
+        spendAnimationTask?.cancel()
+        spendAnimationTask = Task {
+            let delay = duration + 0.12
+            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                activeSpendAnimation = nil
+                runNextSpendAnimationIfNeeded()
+            }
+        }
+    }
+
+    private func resolvedCoinSourcePoint(fallbackTarget: CGPoint?) -> CGPoint {
+        if coinPillFrame != .zero {
+            return coinPillFrame.center
+        }
+        if let fallbackTarget {
+            return CGPoint(x: fallbackTarget.x, y: fallbackTarget.y - 80)
+        }
+        return CGPoint(x: 120, y: 120)
+    }
+
+    private func makeSpendParticles(from source: CGPoint, to target: CGPoint, count: Int) -> [ShopSpendParticle] {
+        let count = max(1, count)
+        let midpoint = CGPoint(
+            x: (source.x + target.x) / 2,
+            y: min(source.y, target.y) - 44
+        )
+
+        return (0..<count).map { index in
+            let launchSpreadX = CGFloat.random(in: -8...8)
+            let launchSpreadY = CGFloat.random(in: -5...5)
+            let controlX = midpoint.x + CGFloat.random(in: -26...26)
+            let controlY = midpoint.y + CGFloat.random(in: -16...14)
+            let targetSpreadX = CGFloat.random(in: -12...12)
+            let targetSpreadY = CGFloat.random(in: -8...10)
+
+            return ShopSpendParticle(
+                start: CGPoint(x: source.x + launchSpreadX, y: source.y + launchSpreadY),
+                control: CGPoint(x: controlX, y: controlY),
+                end: CGPoint(x: target.x + targetSpreadX, y: target.y + targetSpreadY),
+                size: CGFloat.random(in: 11...15),
+                delay: Double(index) * 0.018,
+                duration: 0.38 + Double.random(in: 0...0.13),
+                spinDegrees: Double.random(in: -40...40)
+            )
         }
     }
 
@@ -363,6 +484,14 @@ private struct StoreItemCard: View {
                     .clipShape(Capsule())
                     .foregroundStyle(AppColors.textPrimary)
                     .disabled(coins < item.price)
+                    .background(
+                        GeometryReader { proxy in
+                            Color.clear.preference(
+                                key: ShopBuyButtonFramePreferenceKey.self,
+                                value: [item.id: proxy.frame(in: .named(ShopAnimationCoordinateSpace.name))]
+                            )
+                        }
+                    )
                 }
             }
         }
@@ -536,6 +665,163 @@ private struct StaticPetEyes: View {
                 return EyeConfig(centerX: 0, centerY: -16, separation: 22, size: 7)
             }
         }
+    }
+}
+
+private enum ShopAnimationCoordinateSpace {
+    static let name = "ShopAnimationSpace"
+}
+
+private struct ShopSpendAnimationRequest: Identifiable, Equatable {
+    let id = UUID()
+    let coinsFrom: Int
+    let coinsTo: Int
+    let sourcePoint: CGPoint
+    let targetPoint: CGPoint
+    let particles: [ShopSpendParticle]
+    let duration: Double
+}
+
+private struct ShopSpendParticle: Identifiable, Equatable {
+    let id = UUID()
+    let start: CGPoint
+    let control: CGPoint
+    let end: CGPoint
+    let size: CGFloat
+    let delay: Double
+    let duration: Double
+    let spinDegrees: Double
+}
+
+private struct ShopCoinPillFramePreferenceKey: PreferenceKey {
+    static var defaultValue: CGRect = .zero
+
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        let next = nextValue()
+        if next != .zero {
+            value = next
+        }
+    }
+}
+
+private struct ShopBuyButtonFramePreferenceKey: PreferenceKey {
+    static var defaultValue: [UUID: CGRect] = [:]
+
+    static func reduce(value: inout [UUID: CGRect], nextValue: () -> [UUID: CGRect]) {
+        value.merge(nextValue(), uniquingKeysWith: { _, new in new })
+    }
+}
+
+private struct AnimatedShopCoinPill: View {
+    let coins: Int
+    let pulseToken: Int
+    let reduceMotion: Bool
+
+    @State private var pulseScale: CGFloat = 1
+    @State private var pulseOpacity: Double = 1
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "circle.fill")
+                .font(.system(size: 12))
+                .foregroundStyle(AppColors.accentPeach)
+            Text("\(coins)")
+                .font(.headline.weight(.semibold))
+                .monospacedDigit()
+                .foregroundStyle(AppColors.textPrimary)
+                .contentTransition(.numericText(value: Double(coins)))
+            Text("coins")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(.white)
+        .clipShape(Capsule())
+        .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
+        .scaleEffect(pulseScale)
+        .opacity(pulseOpacity)
+        .onChange(of: pulseToken) { _, _ in
+            guard reduceMotion else { return }
+            pulseScale = 0.95
+            pulseOpacity = 0.86
+            withAnimation(.easeOut(duration: 0.2)) {
+                pulseScale = 1
+                pulseOpacity = 1
+            }
+        }
+        .background(
+            GeometryReader { proxy in
+                Color.clear.preference(
+                    key: ShopCoinPillFramePreferenceKey.self,
+                    value: proxy.frame(in: .named(ShopAnimationCoordinateSpace.name))
+                )
+            }
+        )
+    }
+}
+
+private struct ShopSpendParticlesOverlay: View {
+    let request: ShopSpendAnimationRequest?
+    let reduceMotion: Bool
+
+    var body: some View {
+        ZStack {
+            if let request, !reduceMotion {
+                ForEach(request.particles) { particle in
+                    ShopSpendParticleView(particle: particle)
+                }
+            }
+        }
+        .id(request?.id)
+    }
+}
+
+private struct ShopSpendParticleView: View {
+    let particle: ShopSpendParticle
+
+    @State private var progress: CGFloat = 0
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(AppColors.coinPill)
+            Image(systemName: "circle.fill")
+                .font(.system(size: 6, weight: .bold))
+                .foregroundStyle(AppColors.accentPeach)
+        }
+        .frame(width: particle.size, height: particle.size)
+        .rotationEffect(.degrees(particle.spinDegrees * Double(progress)))
+        .scaleEffect(1 - (0.2 * progress))
+        .opacity(max(0, 1 - (1.2 * Double(progress))))
+        .position(currentPosition(progress: progress))
+        .onAppear {
+            withAnimation(
+                .timingCurve(0.25, 0.8, 0.25, 1, duration: particle.duration)
+                    .delay(particle.delay)
+            ) {
+                progress = 1
+            }
+        }
+    }
+
+    private func currentPosition(progress t: CGFloat) -> CGPoint {
+        let oneMinusT = 1 - t
+        let x = (oneMinusT * oneMinusT * particle.start.x)
+            + (2 * oneMinusT * t * particle.control.x)
+            + (t * t * particle.end.x)
+        let y = (oneMinusT * oneMinusT * particle.start.y)
+            + (2 * oneMinusT * t * particle.control.y)
+            + (t * t * particle.end.y)
+            + (14 * t * t)
+        return CGPoint(x: x, y: y)
+    }
+}
+
+private extension CGRect {
+    var center: CGPoint {
+        CGPoint(x: midX, y: midY)
     }
 }
 

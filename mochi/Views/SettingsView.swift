@@ -45,11 +45,6 @@ struct SettingsView: View {
         GridItem(.flexible(), spacing: 12),
         GridItem(.flexible(), spacing: 12)
     ]
-    private let speciesColumns = [
-        GridItem(.flexible(), spacing: 10),
-        GridItem(.flexible(), spacing: 10),
-        GridItem(.flexible(), spacing: 12),
-    ]
     private let privacyPolicyURL = "https://noahlin.ca/privacy"
     private let termsOfServiceURL = "https://noahlin.ca/terms"
     private let aboutTagline = "Build better habits with your cozy pet friend."
@@ -234,15 +229,19 @@ struct SettingsView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            LazyVGrid(columns: speciesColumns, spacing: 10) {
+            HStack(spacing: 8) {
                 ForEach(PetSpecies.allCases) { species in
-                    SpeciesSelectionCard(
+                    SpeciesCompactButton(
                         species: species,
                         isSelected: pet.species == species,
                         action: { setSpecies(species) }
                     )
                 }
             }
+            .padding(8)
+            .background(.white)
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 4)
         }
     }
 
@@ -793,50 +792,46 @@ private struct SettingsEditSheet: View {
     }
 }
 
-private struct SpeciesSelectionCard: View {
+private struct SpeciesCompactButton: View {
     let species: PetSpecies
     let isSelected: Bool
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 8) {
+            VStack(spacing: 2) {
                 ZStack {
                     Circle()
-                        .fill(accentColor.opacity(isSelected ? 0.95 : 0.25))
-                        .frame(width: 34, height: 34)
+                        .fill(accentColor.opacity(isSelected ? 0.92 : 0.22))
+                        .frame(width: 28, height: 28)
 
                     Text(speciesEmoji)
-                        .font(.system(size: 18))
-                        .offset(y: -0.5)
+                        .font(.system(size: 15))
                 }
 
                 Text(species.displayName)
-                    .font(.caption.weight(.semibold))
+                    .font(.caption2.weight(.semibold))
                     .foregroundStyle(AppColors.textPrimary)
                     .lineLimit(1)
-
-                ZStack {
-                    Capsule()
-                        .fill(.white.opacity(0.85))
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(AppColors.accentPurple)
-                }
-                .frame(width: 22, height: 16)
-                .opacity(isSelected ? 1 : 0)
+                    .minimumScaleFactor(0.75)
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 10)
-            .frame(height: 92)
+            .padding(.horizontal, 4)
+            .padding(.vertical, 6)
+            .frame(height: 56)
             .frame(maxWidth: .infinity)
-            .background(isSelected ? accentColor.opacity(0.22) : .white)
+            .background(isSelected ? accentColor.opacity(0.24) : AppColors.background.opacity(0.65))
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(isSelected ? accentColor : Color.black.opacity(0.08), lineWidth: isSelected ? 2 : 1)
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(isSelected ? accentColor : Color.black.opacity(0.06), lineWidth: isSelected ? 1.6 : 1)
             )
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(alignment: .topTrailing) {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(AppColors.accentPurple)
+                    .opacity(isSelected ? 1 : 0)
+                    .offset(x: 3, y: -3)
+            }
             .scaleEffect(isSelected ? 1.0 : 0.985)
             .animation(.spring(response: 0.22, dampingFraction: 0.82), value: isSelected)
         }
