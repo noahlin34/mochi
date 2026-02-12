@@ -23,7 +23,7 @@ enum SeedDataService {
             AppState(
                 lastDailyReset: startOfToday,
                 lastWeeklyReset: startOfWeek,
-                selectedPetSpecies: .cat,
+                selectedPetSpecies: .dog,
                 tutorialSeen: false,
                 userName: "",
                 lastStreakBonusDate: nil,

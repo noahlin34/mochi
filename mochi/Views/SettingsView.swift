@@ -55,6 +55,7 @@ struct SettingsView: View {
                 VStack(spacing: 20) {
                     headerCard
                     profileCard
+                    petSpeciesSection
                     progressSection
                     subscriptionSection
                     preferencesSection
@@ -117,6 +118,11 @@ struct SettingsView: View {
                 }
             }
             .animation(.easeInOut(duration: 0.2), value: footerToastMessage != nil)
+            .onAppear {
+                if appState.selectedPetSpecies != pet.species {
+                    appState.selectedPetSpecies = pet.species
+                }
+            }
         }
         .onDisappear {
             footerToastDismissTask?.cancel()
@@ -209,6 +215,31 @@ struct SettingsView: View {
                     title: "Love Earned",
                     value: "\(pet.xp)"
                 )
+            }
+        }
+    }
+
+    private var petSpeciesSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Pet Species")
+                .font(.headline)
+                .foregroundStyle(AppColors.textPrimary)
+
+            Text("Choose who you're caring for right now.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(PetSpecies.allCases) { species in
+                        SpeciesSelectionCard(
+                            species: species,
+                            isSelected: pet.species == species,
+                            action: { setSpecies(species) }
+                        )
+                    }
+                }
+                .padding(.vertical, 2)
             }
         }
     }
@@ -488,6 +519,13 @@ struct SettingsView: View {
         )
     }
 
+    private func setSpecies(_ species: PetSpecies) {
+        guard pet.species != species || appState.selectedPetSpecies != species else { return }
+        pet.species = species
+        appState.selectedPetSpecies = species
+        Haptics.light()
+    }
+
     private func footerActionButton(title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
@@ -730,14 +768,9 @@ private struct SettingsEditSheet: View {
 
                 Section("Pet") {
                     TextField("Name", text: $pet.name)
-                    Picker("Species", selection: $appState.selectedPetSpecies) {
-                        ForEach(PetSpecies.allCases) { species in
-                            Text(species.displayName).tag(species)
-                        }
-                    }
-                    .onChange(of: appState.selectedPetSpecies) { _, newValue in
-                        pet.species = newValue
-                    }
+                    Text("Species is managed from the main Settings screen.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
 
                 Section("Tutorial") {
@@ -755,6 +788,56 @@ private struct SettingsEditSheet: View {
                 }
             }
         }
+    }
+}
+
+private struct SpeciesSelectionCard: View {
+    let species: PetSpecies
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 8) {
+                    Text(species.displayName)
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(AppColors.textPrimary)
+
+                    Spacer()
+
+                    if isSelected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(AppColors.accentPurple)
+                    }
+                }
+
+                ZStack {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(AppColors.background)
+
+                    PetView(
+                        species: species,
+                        baseOutfitSymbol: nil,
+                        overlaySymbols: [],
+                        isBouncing: false
+                    )
+                    .scaleEffect(0.55)
+                }
+                .frame(height: 122)
+            }
+            .padding(12)
+            .frame(width: 170, alignment: .leading)
+            .background(isSelected ? AppColors.cardPurple.opacity(0.58) : .white)
+            .overlay(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(isSelected ? AppColors.accentPurple : Color.black.opacity(0.08), lineWidth: isSelected ? 2 : 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .shadow(color: .black.opacity(0.06), radius: 10, x: 0, y: 6)
+        }
+        .buttonStyle(.plain)
     }
 }
 
