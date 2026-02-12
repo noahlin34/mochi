@@ -21,14 +21,27 @@ struct HomeView: View {
     @State private var danceTask: Task<Void, Never>?
     @State private var danceTilt: Double = 0
     @State private var danceLift: CGFloat = 0
+    @State private var launchTipsStartedAt: Date?
+    @State private var currentLaunchTip: String?
+    @State private var launchTipTask: Task<Void, Never>?
 
     private let engine = GameEngine()
     private let moodBoostDuration: TimeInterval = 3
+    private let launchTipWindowDuration: TimeInterval = 30
+    private let launchTipRotationInterval: TimeInterval = 5
     private let moodBoostMessages = [
         "Yay! You are taking great care of me!",
         "I love hanging out with you!",
         "This is so much fun!",
         "My mood is way up now!"
+    ]
+    private let launchTips = [
+        "Tip: The higher your streak, the more coins you earn.",
+        "Tip: Change your pet species in Settings.",
+        "Tip: Try different habit schedule types.",
+        "Tip: Spend coins in the Shop on outfits and rooms.",
+        "Tip: Weekly habits are great for bigger goals.",
+        "Tip: Keep energy, hunger, and cleanliness balanced for a happier pet."
     ]
 
     var body: some View {
@@ -52,7 +65,15 @@ struct HomeView: View {
         .onChange(of: reactionController.moodBoostPulse) { _ in
             triggerMoodBoostCelebration()
         }
+        .onAppear {
+            startLaunchTipRotationIfNeeded()
+        }
+        .onChange(of: appState.tutorialSeen) { _, newValue in
+            guard newValue else { return }
+            startLaunchTipRotationIfNeeded()
+        }
         .onDisappear {
+            stopLaunchTipRotation()
             cancelMoodBoostTasks()
         }
     }
@@ -186,6 +207,9 @@ struct HomeView: View {
 
     private var petChatMessage: String {
         guard isMoodBoostActive else {
+            if isLaunchTipWindowActive(now: Date()), let currentLaunchTip {
+                return currentLaunchTip
+            }
             return petStatusMessage
         }
         guard !moodBoostMessages.isEmpty else {
@@ -198,6 +222,18 @@ struct HomeView: View {
     private var isMoodBoostActive: Bool {
         guard let moodBoostEndsAt else { return false }
         return moodBoostEndsAt > Date()
+    }
+
+    private func isLaunchTipWindowActive(now: Date = Date()) -> Bool {
+        LaunchTipRotationHelper.isWindowActive(
+            startedAt: launchTipsStartedAt,
+            now: now,
+            windowDuration: launchTipWindowDuration
+        )
+    }
+
+    private func selectNextLaunchTip(previous: String?) -> String? {
+        LaunchTipRotationHelper.selectNextTip(tips: launchTips, previous: previous)
     }
 
     private var petStatusMessage: String {
@@ -379,6 +415,63 @@ struct HomeView: View {
         isHappyDancing = false
         danceTilt = 0
         danceLift = 0
+    }
+
+    private func startLaunchTipRotationIfNeeded() {
+        guard appState.tutorialSeen else { return }
+
+        let now = Date()
+
+        if launchTipsStartedAt == nil {
+            launchTipsStartedAt = now
+            currentLaunchTip = selectNextLaunchTip(previous: nil)
+        }
+
+        guard isLaunchTipWindowActive(now: now) else {
+            currentLaunchTip = nil
+            stopLaunchTipRotation()
+            return
+        }
+
+        guard launchTipTask == nil else { return }
+
+        launchTipTask = Task { @MainActor in
+            while !Task.isCancelled {
+                let currentTime = Date()
+                guard isLaunchTipWindowActive(now: currentTime) else {
+                    currentLaunchTip = nil
+                    launchTipTask = nil
+                    return
+                }
+
+                let start = launchTipsStartedAt ?? currentTime
+                let elapsed = currentTime.timeIntervalSince(start)
+                let remaining = max(0, launchTipWindowDuration - elapsed)
+                let waitDuration = min(launchTipRotationInterval, remaining)
+
+                guard waitDuration > 0 else {
+                    currentLaunchTip = nil
+                    launchTipTask = nil
+                    return
+                }
+
+                try? await Task.sleep(nanoseconds: UInt64(waitDuration * 1_000_000_000))
+                guard !Task.isCancelled else { return }
+
+                guard isLaunchTipWindowActive(now: Date()) else {
+                    currentLaunchTip = nil
+                    launchTipTask = nil
+                    return
+                }
+
+                currentLaunchTip = selectNextLaunchTip(previous: currentLaunchTip)
+            }
+        }
+    }
+
+    private func stopLaunchTipRotation() {
+        launchTipTask?.cancel()
+        launchTipTask = nil
     }
 
     private func triggerBounce() {
