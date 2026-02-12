@@ -69,14 +69,7 @@ struct StoreView: View {
             .overlay(alignment: .topLeading) {
                 if showFloatingCoinPill {
                     floatingCoinPill
-                        .transition(
-                            reduceMotion
-                                ? .asymmetric(
-                                    insertion: .opacity.combined(with: .scale(scale: 0.94, anchor: .leading)),
-                                    removal: .opacity
-                                )
-                                : .identity
-                        )
+                        .transition(floatingCoinPillTransition)
                 }
             }
             .navigationTitle("Shop")
@@ -178,12 +171,7 @@ struct StoreView: View {
                     }
                 )
                 .transition(
-                    reduceMotion
-                        ? .asymmetric(
-                            insertion: .opacity.combined(with: .scale(scale: 0.98, anchor: .leading)),
-                            removal: .opacity
-                        )
-                        : .identity
+                    headerCoinPillTransition
                 )
             }
         }
@@ -224,6 +212,35 @@ struct StoreView: View {
             }
         )
         .zIndex(3)
+    }
+
+    private var headerCoinPillTransition: AnyTransition {
+        if reduceMotion {
+            return .asymmetric(
+                insertion: .opacity.combined(with: .scale(scale: 0.98, anchor: .leading)),
+                removal: .opacity.combined(with: .scale(scale: 0.92, anchor: .leading))
+            )
+        }
+
+        // Left edge stays anchored while trailing edge collapses toward it.
+        return .asymmetric(
+            insertion: .opacity.combined(with: .scale(scale: 0.96, anchor: .leading)),
+            removal: .opacity.combined(with: .scale(scale: 0.56, anchor: .leading))
+        )
+    }
+
+    private var floatingCoinPillTransition: AnyTransition {
+        if reduceMotion {
+            return .asymmetric(
+                insertion: .opacity.combined(with: .scale(scale: 0.94, anchor: .leading)),
+                removal: .opacity
+            )
+        }
+
+        return .asymmetric(
+            insertion: .opacity.combined(with: .scale(scale: 0.82, anchor: .leading)),
+            removal: .opacity.combined(with: .scale(scale: 0.92, anchor: .leading))
+        )
     }
 
     private var categoryPill: some View {
