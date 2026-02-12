@@ -808,6 +808,7 @@ private struct SpeciesSelectionCard: View {
 
                     Text(speciesEmoji)
                         .font(.system(size: 18))
+                        .offset(y: -0.5)
                 }
 
                 Text(species.displayName)
@@ -815,20 +816,20 @@ private struct SpeciesSelectionCard: View {
                     .foregroundStyle(AppColors.textPrimary)
                     .lineLimit(1)
 
-                if isSelected {
+                ZStack {
+                    Capsule()
+                        .fill(.white.opacity(0.85))
                     Image(systemName: "checkmark")
                         .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(AppColors.accentPurple)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 3)
-                        .background(.white.opacity(0.85))
-                        .clipShape(Capsule())
                 }
+                .frame(width: 22, height: 16)
+                .opacity(isSelected ? 1 : 0)
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 10)
             .frame(height: 92)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity)
             .background(isSelected ? accentColor.opacity(0.22) : .white)
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -836,6 +837,8 @@ private struct SpeciesSelectionCard: View {
             )
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
+            .scaleEffect(isSelected ? 1.0 : 0.985)
+            .animation(.spring(response: 0.22, dampingFraction: 0.82), value: isSelected)
         }
         .buttonStyle(.plain)
     }
