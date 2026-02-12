@@ -229,7 +229,7 @@ struct SettingsView: View {
                 .font(.headline)
                 .foregroundStyle(AppColors.textPrimary)
 
-            Text("Choose who you're caring for right now.")
+            Text("Current: \(pet.species.displayName). Tap to switch instantly.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
@@ -799,35 +799,31 @@ private struct SpeciesSelectionCard: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 8) {
-                    Text(species.displayName)
-                        .font(.subheadline.weight(.bold))
-                        .foregroundStyle(AppColors.textPrimary)
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(isSelected ? AppColors.accentPurple : AppColors.cardGreen.opacity(0.55))
+                    .frame(width: 24, height: 24)
+                    .overlay(
+                        Text(monogram)
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(isSelected ? Color.white : AppColors.textPrimary)
+                    )
 
-                    Spacer()
+                Text(species.displayName)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(AppColors.textPrimary)
+                    .lineLimit(1)
 
-                    if isSelected {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(AppColors.accentPurple)
-                    }
+                Spacer(minLength: 0)
+
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(AppColors.accentPurple)
                 }
-
-                ZStack {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(AppColors.background)
-
-                    SpeciesCardPetPreview(species: species)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 4)
-                        .clipped()
-                }
-                .frame(height: 132)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
-            .padding(12)
+            .padding(.horizontal, 12)
+            .frame(height: 52)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(isSelected ? AppColors.cardPurple.opacity(0.58) : .white)
             .overlay(
@@ -839,34 +835,9 @@ private struct SpeciesSelectionCard: View {
         }
         .buttonStyle(.plain)
     }
-}
 
-private struct SpeciesCardPetPreview: View {
-    let species: PetSpecies
-
-    var body: some View {
-        PetView(
-            species: species,
-            baseOutfitSymbol: nil,
-            overlaySymbols: [],
-            isBouncing: false
-        )
-        .frame(width: 112, height: 112)
-        .scaleEffect(scale)
-        .allowsHitTesting(false)
-    }
-
-    private var scale: CGFloat {
-        switch species {
-        case .dog:
-            return 0.72
-        case .penguin:
-            return 0.70
-        case .lion:
-            return 0.70
-        case .cat, .bunny:
-            return 0.65
-        }
+    private var monogram: String {
+        String(species.displayName.prefix(1)).uppercased()
     }
 }
 
