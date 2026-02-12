@@ -14,11 +14,15 @@ struct StoreView: View {
     @State private var displayedCoins: Int = 0
     @State private var pendingSpendAnimations: [ShopSpendAnimationRequest] = []
     @State private var activeSpendAnimation: ShopSpendAnimationRequest?
-    @State private var coinPillFrame: CGRect = .zero
+    @State private var showFloatingCoinPill: Bool = false
+    @State private var headerFrame: CGRect = .zero
+    @State private var headerCoinPillFrame: CGRect = .zero
+    @State private var floatingCoinPillFrame: CGRect = .zero
     @State private var buyButtonFrames: [UUID: CGRect] = [:]
     @State private var coinPillPulseToken: Int = 0
     @State private var spendAnimationTask: Task<Void, Never>?
     @AppStorage("storeShowAllItems") private var showAllItems = false
+    @Namespace private var coinPillNamespace
 
     private let columns = [
         GridItem(.flexible(), spacing: 16),
@@ -62,6 +66,19 @@ struct StoreView: View {
                 )
                 .allowsHitTesting(false)
             }
+            .overlay(alignment: .topLeading) {
+                if showFloatingCoinPill {
+                    floatingCoinPill
+                        .transition(
+                            reduceMotion
+                                ? .asymmetric(
+                                    insertion: .opacity.combined(with: .scale(scale: 0.94, anchor: .leading)),
+                                    removal: .opacity
+                                )
+                                : .identity
+                        )
+                }
+            }
             .navigationTitle("Shop")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -89,12 +106,39 @@ struct StoreView: View {
                 }
             }
         }
-        .onPreferenceChange(ShopCoinPillFramePreferenceKey.self) { frame in
+        .onPreferenceChange(ShopHeaderFramePreferenceKey.self) { frame in
             guard frame != .zero else { return }
-            coinPillFrame = frame
+            headerFrame = frame
+
+            let stickyThreshold: CGFloat = 8
+            let shouldFloat = frame.maxY < stickyThreshold
+            guard shouldFloat != showFloatingCoinPill else { return }
+
+            if reduceMotion {
+                withAnimation(.easeOut(duration: 0.15)) {
+                    showFloatingCoinPill = shouldFloat
+                }
+            } else {
+                withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
+                    showFloatingCoinPill = shouldFloat
+                }
+            }
+        }
+        .onPreferenceChange(ShopHeaderCoinPillFramePreferenceKey.self) { frame in
+            guard frame != .zero else { return }
+            headerCoinPillFrame = frame
+        }
+        .onPreferenceChange(ShopFloatingCoinPillFramePreferenceKey.self) { frame in
+            guard frame != .zero else { return }
+            floatingCoinPillFrame = frame
         }
         .onPreferenceChange(ShopBuyButtonFramePreferenceKey.self) { frames in
             buyButtonFrames = frames
+        }
+        .onChange(of: showFloatingCoinPill) { _, isShowing in
+            if !isShowing {
+                floatingCoinPillFrame = .zero
+            }
         }
         .onDisappear {
             spendAnimationTask?.cancel()
@@ -114,16 +158,72 @@ struct StoreView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
-            AnimatedShopCoinPill(
-                coins: displayedCoins,
-                pulseToken: coinPillPulseToken,
-                reduceMotion: reduceMotion
-            )
+            if !showFloatingCoinPill {
+                AnimatedShopCoinPill(
+                    coins: displayedCoins,
+                    pulseToken: coinPillPulseToken,
+                    reduceMotion: reduceMotion,
+                    style: .full,
+                    matchedGeometry: ShopCoinPillMatchedGeometry(
+                        id: "shopCoinPill",
+                        namespace: coinPillNamespace
+                    )
+                )
+                .background(
+                    GeometryReader { proxy in
+                        Color.clear.preference(
+                            key: ShopHeaderCoinPillFramePreferenceKey.self,
+                            value: proxy.frame(in: .named(ShopAnimationCoordinateSpace.name))
+                        )
+                    }
+                )
+                .transition(
+                    reduceMotion
+                        ? .asymmetric(
+                            insertion: .opacity.combined(with: .scale(scale: 0.98, anchor: .leading)),
+                            removal: .opacity
+                        )
+                        : .identity
+                )
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
         .background(AppColors.cardYellow)
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .background(
+            GeometryReader { proxy in
+                Color.clear.preference(
+                    key: ShopHeaderFramePreferenceKey.self,
+                    value: proxy.frame(in: .named(ShopAnimationCoordinateSpace.name))
+                )
+            }
+        )
+    }
+
+    private var floatingCoinPill: some View {
+        AnimatedShopCoinPill(
+            coins: displayedCoins,
+            pulseToken: coinPillPulseToken,
+            reduceMotion: reduceMotion,
+            style: .compact,
+            matchedGeometry: ShopCoinPillMatchedGeometry(
+                id: "shopCoinPill",
+                namespace: coinPillNamespace
+            )
+        )
+        .padding(.leading, 20)
+        .padding(.top, 8)
+        .allowsHitTesting(false)
+        .background(
+            GeometryReader { proxy in
+                Color.clear.preference(
+                    key: ShopFloatingCoinPillFramePreferenceKey.self,
+                    value: proxy.frame(in: .named(ShopAnimationCoordinateSpace.name))
+                )
+            }
+        )
+        .zIndex(3)
     }
 
     private var categoryPill: some View {
@@ -344,8 +444,11 @@ struct StoreView: View {
     }
 
     private func resolvedCoinSourcePoint(fallbackTarget: CGPoint?) -> CGPoint {
-        if coinPillFrame != .zero {
-            return coinPillFrame.center
+        if showFloatingCoinPill, floatingCoinPillFrame != .zero {
+            return floatingCoinPillFrame.center
+        }
+        if headerCoinPillFrame != .zero {
+            return headerCoinPillFrame.center
         }
         if let fallbackTarget {
             return CGPoint(x: fallbackTarget.x, y: fallbackTarget.y - 80)
@@ -693,7 +796,29 @@ private struct ShopSpendParticle: Identifiable, Equatable {
     let spinDegrees: Double
 }
 
-private struct ShopCoinPillFramePreferenceKey: PreferenceKey {
+private struct ShopHeaderFramePreferenceKey: PreferenceKey {
+    static var defaultValue: CGRect = .zero
+
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        let next = nextValue()
+        if next != .zero {
+            value = next
+        }
+    }
+}
+
+private struct ShopHeaderCoinPillFramePreferenceKey: PreferenceKey {
+    static var defaultValue: CGRect = .zero
+
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        let next = nextValue()
+        if next != .zero {
+            value = next
+        }
+    }
+}
+
+private struct ShopFloatingCoinPillFramePreferenceKey: PreferenceKey {
     static var defaultValue: CGRect = .zero
 
     static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
@@ -712,31 +837,60 @@ private struct ShopBuyButtonFramePreferenceKey: PreferenceKey {
     }
 }
 
+private struct ShopCoinPillMatchedGeometry {
+    let id: String
+    let namespace: Namespace.ID
+}
+
 private struct AnimatedShopCoinPill: View {
+    enum Style {
+        case full
+        case compact
+    }
+
     let coins: Int
     let pulseToken: Int
     let reduceMotion: Bool
+    let style: Style
+    let matchedGeometry: ShopCoinPillMatchedGeometry?
 
     @State private var pulseScale: CGFloat = 1
     @State private var pulseOpacity: Double = 1
 
     var body: some View {
-        HStack(spacing: 8) {
+        let content = HStack(spacing: style == .full ? 8 : 6) {
             Image(systemName: "circle.fill")
-                .font(.system(size: 12))
+                .font(.system(size: style == .full ? 12 : 11))
                 .foregroundStyle(AppColors.accentPeach)
             Text("\(coins)")
-                .font(.headline.weight(.semibold))
+                .font((style == .full ? Font.headline : Font.subheadline).weight(.semibold))
                 .monospacedDigit()
                 .foregroundStyle(AppColors.textPrimary)
                 .contentTransition(.numericText(value: Double(coins)))
-            Text("coins")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+            if style == .full {
+                Text("coins")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
             Spacer()
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+        .padding(.horizontal, style == .full ? 16 : 12)
+        .padding(.vertical, style == .full ? 10 : 8)
+
+        Group {
+            if let matchedGeometry, !reduceMotion {
+                content
+                    .matchedGeometryEffect(
+                        id: matchedGeometry.id,
+                        in: matchedGeometry.namespace,
+                        properties: [.position, .size],
+                        anchor: .leading
+                    )
+            } else {
+                content
+            }
+        }
+        .frame(width: style == .compact ? 108 : nil, alignment: .leading)
         .background(.white)
         .clipShape(Capsule())
         .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
@@ -751,14 +905,6 @@ private struct AnimatedShopCoinPill: View {
                 pulseOpacity = 1
             }
         }
-        .background(
-            GeometryReader { proxy in
-                Color.clear.preference(
-                    key: ShopCoinPillFramePreferenceKey.self,
-                    value: proxy.frame(in: .named(ShopAnimationCoordinateSpace.name))
-                )
-            }
-        )
     }
 }
 
@@ -784,18 +930,12 @@ private struct ShopSpendParticleView: View {
     @State private var progress: CGFloat = 0
 
     var body: some View {
-        ZStack {
-            Circle()
-                .fill(AppColors.coinPill)
-            Image(systemName: "circle.fill")
-                .font(.system(size: 6, weight: .bold))
-                .foregroundStyle(AppColors.accentPeach)
-        }
+        Circle()
+            .fill(AppColors.accentPeach)
         .frame(width: particle.size, height: particle.size)
         .rotationEffect(.degrees(particle.spinDegrees * Double(progress)))
         .scaleEffect(1 - (0.1 * progress))
         .opacity(max(0, 1 - (1.2 * Double(progress))))
-        .shadow(color: AppColors.accentPeach.opacity(0.3), radius: 4, x: 0, y: 2)
         .position(currentPosition(progress: progress))
         .onAppear {
             withAnimation(
