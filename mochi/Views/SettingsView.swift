@@ -258,6 +258,11 @@ struct SettingsView: View {
                 actionTitle: "Open →",
                 action: {
                     Task {
+                        if revenueCat.hasMochiPro {
+                            await openManageSubscriptionScreen()
+                            return
+                        }
+
                         if revenueCat.currentOffering == nil {
                             await revenueCat.loadCurrentOffering()
                         }
@@ -287,6 +292,17 @@ struct SettingsView: View {
                     }
                 }
             )
+        }
+    }
+
+    @MainActor
+    private func openManageSubscriptionScreen() async {
+        do {
+            try await Purchases.shared.showManageSubscriptions()
+        } catch {
+            let fallback = "Unable to open the change plans screen right now."
+            let message = (error as NSError).localizedDescription
+            revenueCat.lastErrorMessage = message.isEmpty ? fallback : message
         }
     }
 
