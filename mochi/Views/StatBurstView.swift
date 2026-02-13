@@ -5,6 +5,10 @@ struct StatBurstView: View {
 
     @State private var animate = false
 
+    private let entranceDuration: TimeInterval = 0.6
+    private let holdDuration: TimeInterval = 2.0
+    private let exitDuration: TimeInterval = 0.25
+
     var body: some View {
         HStack(spacing: 8) {
             Circle()
@@ -36,11 +40,11 @@ struct StatBurstView: View {
         .opacity(animate ? 1 : 0)
         .scaleEffect(animate ? 1 : 0.9)
         .onAppear {
-            withAnimation(.easeOut(duration: 0.6)) {
+            withAnimation(.easeOut(duration: entranceDuration)) {
                 animate = true
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
-                withAnimation(.easeIn(duration: 0.2)) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + holdDuration) {
+                withAnimation(.easeIn(duration: exitDuration)) {
                     animate = false
                 }
             }

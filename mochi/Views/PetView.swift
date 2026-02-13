@@ -147,6 +147,8 @@ private struct PetOverlayItemView: View {
             return topHatPlacement(for: species)
         case "baseball_hat":
             return baseballHatPlacement(for: species)
+        case "crown_overlay":
+            return crownPlacement(for: species)
         default:
             return OverlayPlacement(size: CGSize(width: 160, height: 160), offset: .zero, rotationDegrees: 0)
         }
@@ -157,6 +159,8 @@ private struct PetOverlayItemView: View {
         switch targetAsset {
         case "baseball_hat":
             return ChromaSettings(threshold: 0.5, smoothing: 0.03)
+        case "crown_overlay":
+            return ChromaSettings(threshold: 0.26, smoothing: 0.03)
         default:
             return ChromaSettings(threshold: 0.18, smoothing: 0.05)
         }
@@ -189,6 +193,21 @@ private struct PetOverlayItemView: View {
             return OverlayPlacement(size: CGSize(width: 74, height: 74), offset: CGSize(width: -5, height: -50), rotationDegrees: 5)
         case .lion:
             return OverlayPlacement(size: CGSize(width: 88, height: 88), offset: CGSize(width: 3, height: -56), rotationDegrees: 5)
+        }
+    }
+
+    private func crownPlacement(for species: PetSpecies) -> OverlayPlacement {
+        switch species {
+        case .cat:
+            return OverlayPlacement(size: CGSize(width: 86, height: 86), offset: CGSize(width: 0, height: -63), rotationDegrees: 0)
+        case .dog:
+            return OverlayPlacement(size: CGSize(width: 90, height: 90), offset: CGSize(width: 0, height: -66), rotationDegrees: 0)
+        case .bunny:
+            return OverlayPlacement(size: CGSize(width: 82, height: 82), offset: CGSize(width: 0, height: -78), rotationDegrees: 0)
+        case .penguin:
+            return OverlayPlacement(size: CGSize(width: 78, height: 78), offset: CGSize(width: -2, height: -59), rotationDegrees: 0)
+        case .lion:
+            return OverlayPlacement(size: CGSize(width: 90, height: 90), offset: CGSize(width: -5, height: -56), rotationDegrees: 0)
         }
     }
 

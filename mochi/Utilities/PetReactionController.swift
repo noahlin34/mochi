@@ -9,6 +9,8 @@ final class PetReactionController: ObservableObject {
     @Published var coinBurst: CoinBurst?
     @Published var statBursts: [StatBurst] = []
 
+    private let statBurstLifetime: TimeInterval = 2.25
+
     func trigger() {
         pulse += 1
     }
@@ -35,7 +37,7 @@ final class PetReactionController: ObservableObject {
         let burst = StatBurst(kind: kind, amount: amount)
         statBursts.append(burst)
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + statBurstLifetime) { [weak self] in
             self?.statBursts.removeAll { $0.id == burst.id }
         }
     }

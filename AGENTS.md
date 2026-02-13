@@ -20,6 +20,29 @@
 - `mochiTests/`: XCTest target (`mochiTests`) for widget logic and reaction controller behavior.
 - `mochi.xcodeproj/`: project, targets, schemes, and SwiftPM configuration.
 
+## Pet Item Rendering (Sprite Swap + Chroma Key Overlay)
+- Outfit rendering has two distinct modes and both are actively used:
+  - `replaceSprite`: the equipped item changes the pet image/sprite asset itself.
+  - `overlay`: the equipped item is drawn on top of the base pet using chroma key.
+- The mode is controlled by `InventoryItem.equipStyle` (`InventoryEquipStyle`) in `mochi/Models/InventoryItem.swift` and `mochi/Models/Enums.swift`.
+- `replaceSprite` items follow existing species/pet asset fallback logic in `mochi/Views/PetView.swift` (for example, `dog_pet_<asset>`, `penguin_pet_<asset>`, sprite sheets).
+- `overlay` items are rendered by overlay item views in `mochi/Views/PetView.swift` and processed through `ChromaKeyedImage` from `mochi/Utilities/ChromaKey.swift`.
+- Overlay source art is expected to use green-screen background (`#00FF00`), which is removed by chroma key settings (threshold/smoothing) in `PetView`.
+- Overlay behavior is intentionally more complex than simple outfit swap:
+  - one base outfit (`replaceSprite`) can be active while multiple overlay items are also active,
+  - `HomeView` and `StoreView` pass these separately (`baseOutfitSymbol` vs `overlaySymbols`),
+  - store equip logic only enforces exclusivity among `replaceSprite` outfits.
+- Overlay asset name resolution supports multiple conventions in `PetView`/`StoreView` (species-specific and shared fallbacks), including:
+  - `<species>_pet_overlay_<asset>`
+  - `<species>_overlay_<asset>`
+  - `pet_overlay_<asset>`
+  - `overlay_<asset>`
+  - `<asset>`
+- Item-specific overlay placement and chroma tuning are per-item code paths in `PetView`:
+  - placement via `resolvedPlacement(...)` and per-item placement helpers,
+  - chroma aggressiveness via `resolvedChromaSettings(...)`.
+- When adding new overlay catalog items, set `equipStyle: .overlay` in `SeedDataService` seeds so existing users receive them through catalog upsert.
+
 ## Build, Test, and Development Commands
 - `open mochi.xcodeproj`: open in Xcode.
 - `xcodebuild -list -project mochi.xcodeproj`: verify schemes/targets on this machine.
