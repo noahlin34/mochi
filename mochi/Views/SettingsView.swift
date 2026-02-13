@@ -251,25 +251,29 @@ struct SettingsView: View {
                 .font(.headline)
                 .foregroundStyle(AppColors.textPrimary)
 
-            SettingsLinkRow(
-                icon: "star.circle.fill",
-                iconTint: AppColors.cardYellow,
-                title: revenueCat.hasMochiPro ? "Mochi Pro Active" : "Upgrade to Mochi Pro",
-                actionTitle: "Open →",
-                action: {
-                    Task {
-                        if revenueCat.hasMochiPro {
-                            await openManageSubscriptionScreen()
-                            return
+            if revenueCat.hasMochiPro {
+                SettingsStatusRow(
+                    icon: "star.circle.fill",
+                    iconTint: AppColors.cardYellow,
+                    title: "Mochi Pro Active",
+                    statusText: "Active"
+                )
+            } else {
+                SettingsLinkRow(
+                    icon: "star.circle.fill",
+                    iconTint: AppColors.cardYellow,
+                    title: "Upgrade to Mochi Pro",
+                    actionTitle: "Open →",
+                    action: {
+                        Task {
+                            if revenueCat.currentOffering == nil {
+                                await revenueCat.loadCurrentOffering()
+                            }
+                            offeringToPresent = revenueCat.currentOffering
                         }
-
-                        if revenueCat.currentOffering == nil {
-                            await revenueCat.loadCurrentOffering()
-                        }
-                        offeringToPresent = revenueCat.currentOffering
                     }
-                }
-            )
+                )
+            }
 
             SettingsLinkRow(
                 icon: "creditcard.fill",
@@ -292,17 +296,6 @@ struct SettingsView: View {
                     }
                 }
             )
-        }
-    }
-
-    @MainActor
-    private func openManageSubscriptionScreen() async {
-        do {
-            try await Purchases.shared.showManageSubscriptions()
-        } catch {
-            let fallback = "Unable to open the change plans screen right now."
-            let message = (error as NSError).localizedDescription
-            revenueCat.lastErrorMessage = message.isEmpty ? fallback : message
         }
     }
 
@@ -725,6 +718,44 @@ private struct SettingsLinkRow: View {
             .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 4)
         }
         .buttonStyle(.plain)
+    }
+}
+
+private struct SettingsStatusRow: View {
+    let icon: String
+    let iconTint: Color
+    let title: String
+    let statusText: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Circle()
+                .fill(iconTint.opacity(0.5))
+                .frame(width: 40, height: 40)
+                .overlay(
+                    Image(systemName: icon)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(AppColors.accentPurple)
+                )
+
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(AppColors.textPrimary)
+
+            Spacer()
+
+            Text(statusText)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(AppColors.accentPurple)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(AppColors.cardPurple.opacity(0.35))
+                .clipShape(Capsule())
+        }
+        .padding(12)
+        .background(.white)
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 4)
     }
 }
 
