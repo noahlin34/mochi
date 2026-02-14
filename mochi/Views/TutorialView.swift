@@ -13,6 +13,7 @@ struct TutorialView: View {
     @State private var nameInput = ""
     @State private var notificationsDenied = false
     @State private var isRequestingNotifications = false
+    @State private var showSkipNotificationsConfirmation = false
 
     private var steps: [TutorialStep] {
         [
@@ -88,6 +89,17 @@ struct TutorialView: View {
             }
             .padding(.vertical, 24)
         }
+        .alert("Skip reminders?", isPresented: $showSkipNotificationsConfirmation) {
+            Button("Enable Reminders") {
+                enableNotificationsFromTutorial()
+            }
+            Button("Continue Without Notifications", role: .destructive) {
+                finishTutorial()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Notifications help keep your streak going. Are you sure you want to continue without enabling reminders?")
+        }
         .onAppear {
             if nameInput.isEmpty {
                 nameInput = appState.userName
@@ -151,7 +163,11 @@ struct TutorialView: View {
 
             Button {
                 if stepIndex == steps.count {
-                    finishTutorial()
+                    if notificationsEnabled {
+                        finishTutorial()
+                    } else {
+                        showSkipNotificationsConfirmation = true
+                    }
                 } else {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         stepIndex = min(steps.count, stepIndex + 1)
