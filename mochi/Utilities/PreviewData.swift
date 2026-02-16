@@ -50,7 +50,6 @@ enum PreviewData {
 
         let catalog = [
             InventoryItem(type: .outfit, name: "Bandana", price: 30, owned: true, equipped: true, assetName: "bandana", petSpecies: .dog),
-            InventoryItem(type: .outfit, name: "Royal Crown", price: 60, owned: false, equipped: false, assetName: "crown", petSpecies: .cat),
             InventoryItem(type: .outfit, name: "Sparkle Charm", price: 45, owned: false, equipped: false, assetName: "sparkles", petSpecies: .bunny),
             InventoryItem(type: .outfit, name: "Snow Scarf", price: 35, owned: false, equipped: false, assetName: "scarf", petSpecies: .penguin),
             InventoryItem(type: .room, name: "Cozy Home", price: 40, owned: true, equipped: true, assetName: "house"),

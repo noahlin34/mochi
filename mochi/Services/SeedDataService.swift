@@ -51,7 +51,9 @@ enum SeedDataService {
     }
 
     private static func upsertCatalog(context: ModelContext) {
-        let existingItems = (try? context.fetch(FetchDescriptor<InventoryItem>())) ?? []
+        var existingItems = (try? context.fetch(FetchDescriptor<InventoryItem>())) ?? []
+        removeDeprecatedCatalogItems(from: &existingItems, context: context)
+
         for seed in catalogSeeds {
             if let existing = existingItems.first(where: { item in
                 item.type == seed.type
@@ -81,9 +83,30 @@ enum SeedDataService {
         }
     }
 
+    private static func removeDeprecatedCatalogItems(
+        from existingItems: inout [InventoryItem],
+        context: ModelContext
+    ) {
+        let deprecatedItems = existingItems.filter { item in
+            isDeprecatedRoyalCrownItem(item)
+        }
+        for item in deprecatedItems {
+            context.delete(item)
+        }
+        existingItems.removeAll { item in
+            isDeprecatedRoyalCrownItem(item)
+        }
+    }
+
+    private static func isDeprecatedRoyalCrownItem(_ item: InventoryItem) -> Bool {
+        item.type == .outfit
+            && item.assetName == "crown"
+            && item.petSpecies == .cat
+            && item.equipStyle == .replaceSprite
+    }
+
     private static let catalogSeeds: [CatalogSeed] = [
         CatalogSeed(type: .outfit, name: "Bandana", price: 30, assetName: "bandana", petSpecies: .dog),
-        CatalogSeed(type: .outfit, name: "Royal Crown", price: 60, assetName: "crown", petSpecies: .cat),
         CatalogSeed(type: .outfit, name: "Sparkle Charm", price: 45, assetName: "sparkles", petSpecies: .bunny),
         CatalogSeed(type: .outfit, name: "Snow Scarf", price: 35, assetName: "scarf", petSpecies: .penguin),
         CatalogSeed(type: .outfit, name: "Top Hat", price: 50, assetName: "top_hat", petSpecies: nil, equipStyle: .overlay, outfitClass: .hat),
