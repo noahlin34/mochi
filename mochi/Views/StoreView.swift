@@ -397,21 +397,9 @@ struct StoreView: View {
     }
 
     private func equip(_ item: InventoryItem) {
-        guard item.owned else { return }
-        if item.type == .room {
-            for other in items where other.type == .room {
-                other.equipped = false
-            }
-        } else if item.equipStyle == .replaceSprite {
-            for other in items where
-                other.type == item.type
-                    && other.equipStyle == .replaceSprite
-                    && other.petSpecies == item.petSpecies {
-                other.equipped = false
-            }
+        if InventoryEquipService.applyEquip(for: item, in: items) {
+            reactionController.trigger()
         }
-        item.equipped = true
-        reactionController.trigger()
     }
 
     private func toggleEquip(_ item: InventoryItem) {
@@ -559,6 +547,12 @@ private struct StoreItemCard: View {
             Text(item.type == .outfit ? "Outfit" : "Room decor")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+
+            if item.type == .outfit {
+                Text("\(item.outfitClass.displayName) item")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
 
             Text(itemSpeciesLabel)
                 .font(.caption2.weight(.semibold))
