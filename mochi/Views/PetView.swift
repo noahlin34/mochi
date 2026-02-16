@@ -41,7 +41,7 @@ struct PetView: View {
     @ViewBuilder private var petBody: some View {
         switch species {
         case .cat:
-            CatPetView(blink: blink, tailWag: tailWag)
+            CatPetView(blink: blink, tailWag: tailWag, outfitAssetName: baseOutfitSymbol)
         case .dog:
             DogPetView(blink: blink, tailWag: tailWag, outfitAssetName: baseOutfitSymbol)
         case .bunny:
@@ -186,13 +186,13 @@ private struct PetOverlayItemView: View {
         case .cat:
             return OverlayPlacement(size: CGSize(width: 84, height: 84), offset: CGSize(width: 2, height: -52), rotationDegrees: 5)
         case .dog:
-            return OverlayPlacement(size: CGSize(width: 88, height: 88), offset: CGSize(width: 3, height: -54), rotationDegrees: 6)
+            return OverlayPlacement(size: CGSize(width: 88, height: 88), offset: CGSize(width: -7, height: -52), rotationDegrees: 6)
         case .bunny:
             return OverlayPlacement(size: CGSize(width: 80, height: 80), offset: CGSize(width: 2, height: -67), rotationDegrees: 4)
         case .penguin:
             return OverlayPlacement(size: CGSize(width: 74, height: 74), offset: CGSize(width: -5, height: -50), rotationDegrees: 5)
         case .lion:
-            return OverlayPlacement(size: CGSize(width: 88, height: 88), offset: CGSize(width: 3, height: -56), rotationDegrees: 5)
+            return OverlayPlacement(size: CGSize(width: 88, height: 88), offset: CGSize(width: -7, height: -53), rotationDegrees: 5)
         }
     }
 
@@ -724,6 +724,113 @@ private struct PawPrint: View {
 private struct CatPetView: View {
     let blink: Bool
     let tailWag: Bool
+    let outfitAssetName: String?
+
+    var body: some View {
+        if let staticName = resolvedStaticName() {
+            CatStaticPetView(imageName: staticName)
+        } else {
+            CatVectorPetView(blink: blink, tailWag: tailWag)
+        }
+    }
+
+    private func resolvedStaticName() -> String? {
+        if let outfitAssetName,
+           UIImage(named: "cat_pet_\(outfitAssetName)") != nil {
+            return "cat_pet_\(outfitAssetName)"
+        }
+        if UIImage(named: "cat_pet") != nil {
+            return "cat_pet"
+        }
+        return nil
+    }
+}
+
+private struct CatStaticPetView: View {
+    let imageName: String
+
+    @State private var breathe = false
+    @State private var blink = false
+    @State private var blinkTask: Task<Void, Never>?
+
+    @AppStorage("catEyeCenterX") private var eyeCenterXStorage: Double = -9
+    @AppStorage("catEyeCenterY") private var eyeCenterYStorage: Double = -20
+    @AppStorage("catEyeSeparation") private var eyeSeparationStorage: Double = 24
+    @AppStorage("catEyeSize") private var eyeSizeStorage: Double = 10
+
+    var body: some View {
+        ZStack {
+            ChromaKeyedImage(name: imageName, resizable: true, contentMode: .fit)
+
+            eyeOverlay
+        }
+        .frame(width: 160, height: 160)
+        .scaleEffect(breathe ? 1.02 : 1.0)
+        .rotationEffect(.degrees(breathe ? 0.6 : 0.0))
+        .shadow(color: Color.black.opacity(0.18), radius: breathe ? 8 : 6, x: 0, y: 8)
+        .padding(.top, 6)
+        .onAppear {
+            breathe = false
+            blink = false
+            withAnimation(.easeInOut(duration: 2.4).repeatForever(autoreverses: true)) {
+                breathe = true
+            }
+            blinkTask?.cancel()
+            blinkTask = nil
+            startBlinking()
+        }
+        .onDisappear {
+            blinkTask?.cancel()
+            blinkTask = nil
+        }
+    }
+
+    private var eyeOverlay: some View {
+        let eyeCenterX = CGFloat(eyeCenterXStorage)
+        let eyeCenterY = CGFloat(eyeCenterYStorage)
+        let halfSeparation = CGFloat(eyeSeparationStorage) / 2
+        let eyeSize = CGFloat(eyeSizeStorage)
+
+        return ZStack {
+            Circle()
+                .fill(Color.black.opacity(0.9))
+                .frame(width: eyeSize, height: eyeSize)
+                .offset(x: eyeCenterX - halfSeparation, y: eyeCenterY)
+                .scaleEffect(x: 1.0, y: blink ? 0.6 : 1.0, anchor: .center)
+
+            Circle()
+                .fill(Color.black.opacity(0.9))
+                .frame(width: eyeSize, height: eyeSize)
+                .offset(x: eyeCenterX + halfSeparation, y: eyeCenterY)
+                .scaleEffect(x: 1.0, y: blink ? 0.6 : 1.0, anchor: .center)
+        }
+    }
+
+    private func startBlinking() {
+        guard blinkTask == nil else { return }
+        blinkTask = Task {
+            while !Task.isCancelled {
+                let wait = Double.random(in: 2.4...4.2)
+                try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
+                await MainActor.run {
+                    withAnimation(.easeInOut(duration: 0.12)) {
+                        blink = true
+                    }
+                }
+                try? await Task.sleep(nanoseconds: 120_000_000)
+                await MainActor.run {
+                    withAnimation(.easeOut(duration: 0.14)) {
+                        blink = false
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct CatVectorPetView: View {
+    let blink: Bool
+    let tailWag: Bool
 
     private let baseColor = Color(red: 0.82, green: 0.68, blue: 0.93)
     private let outlineColor = Color(red: 0.25, green: 0.18, blue: 0.14)
@@ -1216,7 +1323,7 @@ private struct LionVectorPetView: View {
 
 #Preview {
     VStack(spacing: 16) {
-        PetView(species: .lion, baseOutfitSymbol: nil, overlaySymbols: ["top_hat"], isBouncing: false)
+        PetView(species: .cat, baseOutfitSymbol: nil, overlaySymbols: [], isBouncing: false)
 
     }
     .padding()
