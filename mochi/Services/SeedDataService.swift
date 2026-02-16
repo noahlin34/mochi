@@ -61,6 +61,7 @@ enum SeedDataService {
             }) {
                 existing.name = seed.name
                 existing.price = seed.price
+                existing.outfitClass = seed.outfitClass
                 continue
             }
 
@@ -73,7 +74,8 @@ enum SeedDataService {
                     equipped: false,
                     assetName: seed.assetName,
                     petSpecies: seed.petSpecies,
-                    equipStyle: seed.equipStyle
+                    equipStyle: seed.equipStyle,
+                    outfitClass: seed.outfitClass
                 )
             )
         }
@@ -84,9 +86,9 @@ enum SeedDataService {
         CatalogSeed(type: .outfit, name: "Royal Crown", price: 60, assetName: "crown", petSpecies: .cat),
         CatalogSeed(type: .outfit, name: "Sparkle Charm", price: 45, assetName: "sparkles", petSpecies: .bunny),
         CatalogSeed(type: .outfit, name: "Snow Scarf", price: 35, assetName: "scarf", petSpecies: .penguin),
-        CatalogSeed(type: .outfit, name: "Top Hat", price: 50, assetName: "top_hat", petSpecies: nil, equipStyle: .overlay),
-        CatalogSeed(type: .outfit, name: "Baseball Hat", price: 50, assetName: "baseball_hat", petSpecies: nil, equipStyle: .overlay),
-        CatalogSeed(type: .outfit, name: "Crown", price: 55, assetName: "crown_overlay", petSpecies: nil, equipStyle: .overlay),
+        CatalogSeed(type: .outfit, name: "Top Hat", price: 50, assetName: "top_hat", petSpecies: nil, equipStyle: .overlay, outfitClass: .hat),
+        CatalogSeed(type: .outfit, name: "Baseball Hat", price: 50, assetName: "baseball_hat", petSpecies: nil, equipStyle: .overlay, outfitClass: .hat),
+        CatalogSeed(type: .outfit, name: "Crown", price: 55, assetName: "crown_overlay", petSpecies: nil, equipStyle: .overlay, outfitClass: .hat),
         CatalogSeed(type: .room, name: "Cozy Home", price: 40, assetName: "house"),
         CatalogSeed(type: .room, name: "Beach Resort", price: 55, assetName: "beach"),
         CatalogSeed(type: .room, name: "Dreamy Bed", price: 70, assetName: "bed.double"),
@@ -100,6 +102,7 @@ enum SeedDataService {
         let assetName: String
         let petSpecies: PetSpecies?
         let equipStyle: InventoryEquipStyle
+        let outfitClass: InventoryOutfitClass
 
         init(
             type: InventoryItemType,
@@ -107,7 +110,8 @@ enum SeedDataService {
             price: Int,
             assetName: String,
             petSpecies: PetSpecies? = nil,
-            equipStyle: InventoryEquipStyle = .replaceSprite
+            equipStyle: InventoryEquipStyle = .replaceSprite,
+            outfitClass: InventoryOutfitClass = .body
         ) {
             self.type = type
             self.name = name
@@ -115,6 +119,7 @@ enum SeedDataService {
             self.assetName = assetName
             self.petSpecies = petSpecies
             self.equipStyle = equipStyle
+            self.outfitClass = outfitClass
         }
     }
 }
