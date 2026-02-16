@@ -74,3 +74,25 @@ enum InventoryEquipStyle: String, Codable, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 }
+
+enum InventoryOutfitClass: String, Codable, CaseIterable, Identifiable {
+    case hat
+    case body
+    case accessory
+    case face
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .hat:
+            return "Hat"
+        case .body:
+            return "Body"
+        case .accessory:
+            return "Accessory"
+        case .face:
+            return "Face"
+        }
+    }
+}
