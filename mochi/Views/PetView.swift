@@ -169,7 +169,7 @@ private struct PetOverlayItemView: View {
     private func topHatPlacement(for species: PetSpecies) -> OverlayPlacement {
         switch species {
         case .cat:
-            return OverlayPlacement(size: CGSize(width: 86, height: 86), offset: CGSize(width: 0, height: -58), rotationDegrees: 0)
+            return OverlayPlacement(size: CGSize(width: 86, height: 86), offset: CGSize(width: -5, height: -55), rotationDegrees: 0)
         case .dog:
             return OverlayPlacement(size: CGSize(width: 90, height: 90), offset: CGSize(width: 0, height: -60), rotationDegrees: 0)
         case .bunny:
@@ -184,11 +184,11 @@ private struct PetOverlayItemView: View {
     private func baseballHatPlacement(for species: PetSpecies) -> OverlayPlacement {
         switch species {
         case .cat:
-            return OverlayPlacement(size: CGSize(width: 84, height: 84), offset: CGSize(width: 2, height: -52), rotationDegrees: 5)
+            return OverlayPlacement(size: CGSize(width: 88, height: 88), offset: CGSize(width: -12, height: -45), rotationDegrees: 0)
         case .dog:
             return OverlayPlacement(size: CGSize(width: 88, height: 88), offset: CGSize(width: -7, height: -52), rotationDegrees: 6)
         case .bunny:
-            return OverlayPlacement(size: CGSize(width: 80, height: 80), offset: CGSize(width: 2, height: -67), rotationDegrees: 4)
+            return OverlayPlacement(size: CGSize(width: 60, height: 60), offset: CGSize(width: -15, height: -35), rotationDegrees: 4)
         case .penguin:
             return OverlayPlacement(size: CGSize(width: 74, height: 74), offset: CGSize(width: -5, height: -50), rotationDegrees: 5)
         case .lion:
@@ -199,7 +199,7 @@ private struct PetOverlayItemView: View {
     private func crownPlacement(for species: PetSpecies) -> OverlayPlacement {
         switch species {
         case .cat:
-            return OverlayPlacement(size: CGSize(width: 86, height: 86), offset: CGSize(width: 0, height: -63), rotationDegrees: 0)
+            return OverlayPlacement(size: CGSize(width: 60, height: 60), offset: CGSize(width: -10, height: -50), rotationDegrees: 0)
         case .dog:
             return OverlayPlacement(size: CGSize(width: 90, height: 90), offset: CGSize(width: 0, height: -66), rotationDegrees: 0)
         case .bunny:
@@ -953,7 +953,7 @@ private struct BunnyStaticPetView: View {
     @State private var blink = false
     @State private var blinkTask: Task<Void, Never>?
 
-    @AppStorage("bunnyEyeCenterX") private var eyeCenterXStorage: Double = 0
+    @AppStorage("bunnyEyeCenterX") private var eyeCenterXStorage: Double = -8
     @AppStorage("bunnyEyeCenterY") private var eyeCenterYStorage: Double = -16
     @AppStorage("bunnyEyeSeparation") private var eyeSeparationStorage: Double = 22
     @AppStorage("bunnyEyeSize") private var eyeSizeStorage: Double = 7
@@ -1429,7 +1429,7 @@ private struct LionVectorPetView: View {
 
 #Preview {
     VStack(spacing: 16) {
-        PetView(species: .cat, baseOutfitSymbol: nil, overlaySymbols: [], isBouncing: false)
+        PetView(species: .bunny, baseOutfitSymbol: nil, overlaySymbols: [], isBouncing: false)
 
     }
     .padding()
