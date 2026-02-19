@@ -82,9 +82,19 @@ struct StoreView: View {
         }
         .onAppear {
             displayedCoins = pet.coins
+            InventoryEquipService.migrateLegacyEquippedStatesIfNeeded(
+                in: items,
+                activeSpecies: pet.species
+            )
         }
         .onChange(of: selectedCategory) { _, _ in
             previewItem = nil
+        }
+        .onChange(of: pet.species) { _, newSpecies in
+            InventoryEquipService.migrateLegacyEquippedStatesIfNeeded(
+                in: items,
+                activeSpecies: newSpecies
+            )
         }
         .onChange(of: showAllItems) { _, _ in
             if !showAllItems, let previewItem, !previewItem.isAvailable(for: pet.species) {
@@ -306,7 +316,7 @@ struct StoreView: View {
     private var equippedBaseOutfit: InventoryItem? {
         let equipped = items.filter {
             $0.type == .outfit
-                && $0.equipped
+                && $0.isEquipped(for: pet.species)
                 && $0.equipStyle == .replaceSprite
         }
         if let match = equipped.first(where: { $0.petSpecies == pet.species }) {
@@ -316,14 +326,14 @@ struct StoreView: View {
     }
 
     private var equippedRoom: InventoryItem? {
-        items.first { $0.type == .room && $0.equipped }
+        items.first { $0.type == .room && $0.isEquipped(for: pet.species) }
     }
 
     private func equippedOverlayOutfits(for species: PetSpecies) -> [InventoryItem] {
         items
             .filter {
                 $0.type == .outfit
-                    && $0.equipped
+                    && $0.isEquipped(for: species)
                     && $0.equipStyle == .overlay
                     && $0.isAvailable(for: species)
             }
@@ -397,7 +407,11 @@ struct StoreView: View {
     }
 
     private func equip(_ item: InventoryItem) {
-        if InventoryEquipService.applyEquip(for: item, in: items) {
+        if InventoryEquipService.applyEquip(
+            for: item,
+            in: items,
+            activeSpecies: pet.species
+        ) {
             reactionController.trigger()
         }
     }
@@ -405,8 +419,8 @@ struct StoreView: View {
     private func toggleEquip(_ item: InventoryItem) {
         guard item.isAvailable(for: pet.species) else { return }
         guard item.owned else { return }
-        if item.equipped {
-            item.equipped = false
+        if item.isEquipped(for: pet.species) {
+            item.setEquipped(false, for: pet.species)
         } else {
             equip(item)
         }
@@ -530,6 +544,7 @@ private struct StoreItemCard: View {
 
     var body: some View {
         let isAvailable = item.isAvailable(for: activeSpecies)
+        let isEquipped = item.isEquipped(for: activeSpecies)
         let previewImageName = resolvedPreviewName()
         VStack(alignment: .leading, spacing: 10) {
             ZStack {
@@ -576,11 +591,11 @@ private struct StoreItemCard: View {
                         .background(Color.gray.opacity(0.2))
                         .clipShape(Capsule())
                 } else if item.owned {
-                    Text(item.equipped ? "Equipped" : "Equip")
+                    Text(isEquipped ? "Equipped" : "Equip")
                         .font(.caption.weight(.semibold))
                         .padding(.horizontal, 10)
                         .padding(.vertical, 4)
-                        .background(item.equipped ? AppColors.cardPurple : AppColors.cardGreen)
+                        .background(isEquipped ? AppColors.cardPurple : AppColors.cardGreen)
                         .clipShape(Capsule())
                         .contentShape(Capsule())
                         .onTapGesture {

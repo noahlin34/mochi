@@ -65,7 +65,17 @@ struct HomeView: View {
             triggerMoodBoostCelebration()
         }
         .onAppear {
+            InventoryEquipService.migrateLegacyEquippedStatesIfNeeded(
+                in: items,
+                activeSpecies: pet.species
+            )
             startLaunchTipDisplayIfNeeded()
+        }
+        .onChange(of: pet.species) { _, newSpecies in
+            InventoryEquipService.migrateLegacyEquippedStatesIfNeeded(
+                in: items,
+                activeSpecies: newSpecies
+            )
         }
         .onChange(of: appState.tutorialSeen) { _, newValue in
             guard newValue else { return }
@@ -180,7 +190,7 @@ struct HomeView: View {
     private var equippedBaseOutfit: InventoryItem? {
         let equipped = items.filter {
             $0.type == .outfit
-                && $0.equipped
+                && $0.isEquipped(for: pet.species)
                 && $0.equipStyle == .replaceSprite
         }
         if let match = equipped.first(where: { $0.petSpecies == pet.species }) {
@@ -193,7 +203,7 @@ struct HomeView: View {
         items
             .filter {
                 $0.type == .outfit
-                    && $0.equipped
+                    && $0.isEquipped(for: pet.species)
                     && $0.equipStyle == .overlay
                     && $0.isAvailable(for: pet.species)
             }
@@ -201,7 +211,7 @@ struct HomeView: View {
     }
 
     private var equippedRoom: InventoryItem? {
-        items.first { $0.type == .room && $0.equipped }
+        items.first { $0.type == .room && $0.isEquipped(for: pet.species) }
     }
 
     private var petChatMessage: String {

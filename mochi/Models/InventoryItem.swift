@@ -9,6 +9,7 @@ final class InventoryItem {
     var price: Int
     var owned: Bool
     var equipped: Bool
+    var equippedSpeciesRaw: String?
     var assetName: String
     var petSpeciesRaw: String?
     var equipStyleRaw: String = InventoryEquipStyle.replaceSprite.rawValue
@@ -22,6 +23,7 @@ final class InventoryItem {
         price: Int,
         owned: Bool = false,
         equipped: Bool = false,
+        equippedSpeciesRaw: String? = nil,
         assetName: String,
         petSpecies: PetSpecies? = nil,
         equipStyle: InventoryEquipStyle = .replaceSprite,
@@ -34,6 +36,7 @@ final class InventoryItem {
         self.price = price
         self.owned = owned
         self.equipped = equipped
+        self.equippedSpeciesRaw = equippedSpeciesRaw
         self.assetName = assetName
         self.petSpeciesRaw = petSpecies?.rawValue
         self.equipStyleRaw = equipStyle.rawValue
@@ -73,5 +76,56 @@ final class InventoryItem {
         if type == .room { return true }
         guard let petSpecies else { return true }
         return petSpecies == species
+    }
+
+    func isEquipped(for species: PetSpecies) -> Bool {
+        let equippedSpeciesSet = self.equippedSpeciesSet
+        if !equippedSpeciesSet.isEmpty {
+            return equippedSpeciesSet.contains(species.rawValue)
+        }
+
+        guard equipped else { return false }
+        if let petSpecies {
+            return petSpecies == species
+        }
+        return true
+    }
+
+    func setEquipped(_ isEquipped: Bool, for species: PetSpecies) {
+        var equippedSpeciesSet = self.equippedSpeciesSet
+        if isEquipped {
+            equippedSpeciesSet.insert(species.rawValue)
+        } else {
+            equippedSpeciesSet.remove(species.rawValue)
+        }
+
+        equippedSpeciesRaw = equippedSpeciesSet.isEmpty
+            ? nil
+            : equippedSpeciesSet.sorted().joined(separator: ",")
+        equipped = !equippedSpeciesSet.isEmpty
+    }
+
+    func migrateLegacyEquippedStateIfNeeded(activeSpecies: PetSpecies) {
+        guard equipped else { return }
+        guard equippedSpeciesSet.isEmpty else { return }
+
+        let targetSpecies = petSpecies ?? activeSpecies
+        setEquipped(true, for: targetSpecies)
+    }
+
+    private var equippedSpeciesSet: Set<String> {
+        guard let equippedSpeciesRaw, !equippedSpeciesRaw.isEmpty else {
+            return []
+        }
+
+        let rawValues = equippedSpeciesRaw.split(separator: ",")
+        let validValues = rawValues.compactMap { rawValue -> String? in
+            let trimmed = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { return nil }
+            guard PetSpecies(rawValue: trimmed) != nil else { return nil }
+            return trimmed
+        }
+
+        return Set(validValues)
     }
 }

@@ -5,6 +5,7 @@ import RevenueCatUI
 
 struct SettingsView: View {
     @Query(sort: \Habit.createdAt) private var habits: [Habit]
+    @Query(sort: \InventoryItem.createdAt) private var items: [InventoryItem]
     @EnvironmentObject private var revenueCat: RevenueCatManager
     @Environment(\.tabBarHeight) private var tabBarHeight
     @Environment(\.openURL) private var openURL
@@ -119,6 +120,10 @@ struct SettingsView: View {
             }
             .animation(.easeInOut(duration: 0.2), value: footerToastMessage != nil)
             .onAppear {
+                InventoryEquipService.migrateLegacyEquippedStatesIfNeeded(
+                    in: items,
+                    activeSpecies: pet.species
+                )
                 if appState.selectedPetSpecies != pet.species {
                     appState.selectedPetSpecies = pet.species
                 }
@@ -531,8 +536,16 @@ struct SettingsView: View {
 
     private func setSpecies(_ species: PetSpecies) {
         guard pet.species != species || appState.selectedPetSpecies != species else { return }
+        InventoryEquipService.migrateLegacyEquippedStatesIfNeeded(
+            in: items,
+            activeSpecies: pet.species
+        )
         pet.species = species
         appState.selectedPetSpecies = species
+        InventoryEquipService.migrateLegacyEquippedStatesIfNeeded(
+            in: items,
+            activeSpecies: species
+        )
         Haptics.light()
     }
 

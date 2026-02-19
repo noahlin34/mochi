@@ -3,7 +3,7 @@ import XCTest
 
 final class InventoryEquipServiceTests: XCTestCase {
     @MainActor
-    func testApplyEquipUnequipsExistingSameClassItem() {
+    func testApplyEquipUnequipsExistingSameClassItemForActiveSpecies() {
         let equippedHat = InventoryItem(
             type: .outfit,
             name: "Top Hat",
@@ -27,16 +27,17 @@ final class InventoryEquipServiceTests: XCTestCase {
 
         let changed = InventoryEquipService.applyEquip(
             for: newHat,
-            in: [equippedHat, newHat]
+            in: [equippedHat, newHat],
+            activeSpecies: .dog
         )
 
         XCTAssertTrue(changed)
-        XCTAssertFalse(equippedHat.equipped)
-        XCTAssertTrue(newHat.equipped)
+        XCTAssertFalse(equippedHat.isEquipped(for: .dog))
+        XCTAssertTrue(newHat.isEquipped(for: .dog))
     }
 
     @MainActor
-    func testApplyEquipKeepsOtherClassesEquipped() {
+    func testApplyEquipKeepsOtherClassesEquippedForActiveSpecies() {
         let equippedAccessory = InventoryItem(
             type: .outfit,
             name: "Charm",
@@ -60,12 +61,13 @@ final class InventoryEquipServiceTests: XCTestCase {
 
         let changed = InventoryEquipService.applyEquip(
             for: newHat,
-            in: [equippedAccessory, newHat]
+            in: [equippedAccessory, newHat],
+            activeSpecies: .dog
         )
 
         XCTAssertTrue(changed)
-        XCTAssertTrue(equippedAccessory.equipped)
-        XCTAssertTrue(newHat.equipped)
+        XCTAssertTrue(equippedAccessory.isEquipped(for: .dog))
+        XCTAssertTrue(newHat.isEquipped(for: .dog))
     }
 
     @MainActor
@@ -94,16 +96,17 @@ final class InventoryEquipServiceTests: XCTestCase {
 
         let changed = InventoryEquipService.applyEquip(
             for: overlayBody,
-            in: [spriteBody, overlayBody]
+            in: [spriteBody, overlayBody],
+            activeSpecies: .dog
         )
 
         XCTAssertTrue(changed)
-        XCTAssertFalse(spriteBody.equipped)
-        XCTAssertTrue(overlayBody.equipped)
+        XCTAssertFalse(spriteBody.isEquipped(for: .dog))
+        XCTAssertTrue(overlayBody.isEquipped(for: .dog))
     }
 
     @MainActor
-    func testApplyEquipRoomUnequipsOtherRoomsOnly() {
+    func testApplyEquipRoomUnequipsOtherRoomsOnlyForActiveSpecies() {
         let equippedRoom = InventoryItem(
             type: .room,
             name: "Cozy Home",
@@ -133,13 +136,14 @@ final class InventoryEquipServiceTests: XCTestCase {
 
         let changed = InventoryEquipService.applyEquip(
             for: newRoom,
-            in: [equippedRoom, newRoom, equippedHat]
+            in: [equippedRoom, newRoom, equippedHat],
+            activeSpecies: .dog
         )
 
         XCTAssertTrue(changed)
-        XCTAssertFalse(equippedRoom.equipped)
-        XCTAssertTrue(newRoom.equipped)
-        XCTAssertTrue(equippedHat.equipped)
+        XCTAssertFalse(equippedRoom.isEquipped(for: .dog))
+        XCTAssertTrue(newRoom.isEquipped(for: .dog))
+        XCTAssertTrue(equippedHat.isEquipped(for: .dog))
     }
 
     @MainActor
@@ -167,12 +171,96 @@ final class InventoryEquipServiceTests: XCTestCase {
 
         let changed = InventoryEquipService.applyEquip(
             for: unownedHat,
-            in: [ownedHat, unownedHat]
+            in: [ownedHat, unownedHat],
+            activeSpecies: .dog
         )
 
         XCTAssertFalse(changed)
-        XCTAssertTrue(ownedHat.equipped)
-        XCTAssertFalse(unownedHat.equipped)
+        XCTAssertTrue(ownedHat.isEquipped(for: .dog))
+        XCTAssertFalse(unownedHat.isEquipped(for: .dog))
+    }
+
+    @MainActor
+    func testApplyEquipDoesNotUnequipOtherSpeciesState() {
+        let topHat = InventoryItem(
+            type: .outfit,
+            name: "Top Hat",
+            price: 50,
+            owned: true,
+            equipped: false,
+            assetName: "top_hat",
+            equipStyle: .overlay,
+            outfitClass: .hat
+        )
+        topHat.setEquipped(true, for: .dog)
+
+        let baseballHat = InventoryItem(
+            type: .outfit,
+            name: "Baseball Hat",
+            price: 50,
+            owned: true,
+            equipped: false,
+            assetName: "baseball_hat",
+            equipStyle: .overlay,
+            outfitClass: .hat
+        )
+
+        let changed = InventoryEquipService.applyEquip(
+            for: baseballHat,
+            in: [topHat, baseballHat],
+            activeSpecies: .cat
+        )
+
+        XCTAssertTrue(changed)
+        XCTAssertTrue(topHat.isEquipped(for: .dog))
+        XCTAssertFalse(topHat.isEquipped(for: .cat))
+        XCTAssertTrue(baseballHat.isEquipped(for: .cat))
+        XCTAssertFalse(baseballHat.isEquipped(for: .dog))
+    }
+
+    @MainActor
+    func testLegacyMigrationAssignsSharedEquippedItemToActiveSpecies() {
+        let sharedHat = InventoryItem(
+            type: .outfit,
+            name: "Top Hat",
+            price: 50,
+            owned: true,
+            equipped: true,
+            assetName: "top_hat",
+            equipStyle: .overlay,
+            outfitClass: .hat
+        )
+
+        InventoryEquipService.migrateLegacyEquippedStatesIfNeeded(
+            in: [sharedHat],
+            activeSpecies: .dog
+        )
+
+        XCTAssertTrue(sharedHat.isEquipped(for: .dog))
+        XCTAssertFalse(sharedHat.isEquipped(for: .cat))
+    }
+
+    @MainActor
+    func testLegacyMigrationUsesItemSpeciesWhenPresent() {
+        let speciesLockedBandana = InventoryItem(
+            type: .outfit,
+            name: "Bandana",
+            price: 30,
+            owned: true,
+            equipped: true,
+            assetName: "bandana",
+            petSpecies: .dog,
+            equipStyle: .replaceSprite,
+            outfitClass: .body
+        )
+
+        InventoryEquipService.migrateLegacyEquippedStatesIfNeeded(
+            in: [speciesLockedBandana],
+            activeSpecies: .cat
+        )
+
+        XCTAssertTrue(speciesLockedBandana.isEquipped(for: .dog))
+        XCTAssertFalse(speciesLockedBandana.isEquipped(for: .cat))
     }
 
     @MainActor
