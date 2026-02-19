@@ -173,7 +173,7 @@ private struct PetOverlayItemView: View {
         case .dog:
             return OverlayPlacement(size: CGSize(width: 90, height: 90), offset: CGSize(width: 0, height: -60), rotationDegrees: 0)
         case .bunny:
-            return OverlayPlacement(size: CGSize(width: 82, height: 82), offset: CGSize(width: 0, height: -74), rotationDegrees: 0)
+            return OverlayPlacement(size: CGSize(width: 60, height: 60), offset: CGSize(width: -5, height: -40), rotationDegrees: 0)
         case .penguin:
             return OverlayPlacement(size: CGSize(width: 76, height: 76), offset: CGSize(width: 0, height: -60), rotationDegrees: 0)
         case .lion:
@@ -203,7 +203,7 @@ private struct PetOverlayItemView: View {
         case .dog:
             return OverlayPlacement(size: CGSize(width: 90, height: 90), offset: CGSize(width: 0, height: -66), rotationDegrees: 0)
         case .bunny:
-            return OverlayPlacement(size: CGSize(width: 82, height: 82), offset: CGSize(width: 0, height: -78), rotationDegrees: 0)
+            return OverlayPlacement(size: CGSize(width: 60, height: 60), offset: CGSize(width: -8, height: -45), rotationDegrees: 0)
         case .penguin:
             return OverlayPlacement(size: CGSize(width: 78, height: 78), offset: CGSize(width: -2, height: -59), rotationDegrees: 0)
         case .lion:
@@ -1429,7 +1429,7 @@ private struct LionVectorPetView: View {
 
 #Preview {
     VStack(spacing: 16) {
-        PetView(species: .bunny, baseOutfitSymbol: nil, overlaySymbols: [], isBouncing: false)
+        PetView(species: .bunny, baseOutfitSymbol: nil, overlaySymbols: ["top_hat"], isBouncing: false)
 
     }
     .padding()
