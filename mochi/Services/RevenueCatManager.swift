@@ -1,6 +1,71 @@
-import Foundation
 import Combine
+import Foundation
 import RevenueCat
+
+struct RevenueCatPurchaseResult {
+    let customerInfo: CustomerInfo
+    let userCancelled: Bool
+}
+
+protocol PurchasesClient: AnyObject {
+    var isConfigured: Bool { get }
+    var customerInfoStream: AsyncStream<CustomerInfo> { get }
+
+    func setLogLevel(_ level: LogLevel)
+    func configure(withAPIKey apiKey: String)
+    func customerInfo() async throws -> CustomerInfo
+    func offerings() async throws -> Offerings
+    func purchase(package: Package) async throws -> RevenueCatPurchaseResult
+    func restorePurchases() async throws -> CustomerInfo
+}
+
+final class LivePurchasesClient: PurchasesClient {
+    var isConfigured: Bool {
+        Purchases.isConfigured
+    }
+
+    var customerInfoStream: AsyncStream<CustomerInfo> {
+        AsyncStream { continuation in
+            let task = Task {
+                for await info in Purchases.shared.customerInfoStream {
+                    continuation.yield(info)
+                }
+                continuation.finish()
+            }
+            continuation.onTermination = { _ in
+                task.cancel()
+            }
+        }
+    }
+
+    func setLogLevel(_ level: LogLevel) {
+        Purchases.logLevel = level
+    }
+
+    func configure(withAPIKey apiKey: String) {
+        Purchases.configure(withAPIKey: apiKey)
+    }
+
+    func customerInfo() async throws -> CustomerInfo {
+        try await Purchases.shared.customerInfo()
+    }
+
+    func offerings() async throws -> Offerings {
+        try await Purchases.shared.offerings()
+    }
+
+    func purchase(package: Package) async throws -> RevenueCatPurchaseResult {
+        let result = try await Purchases.shared.purchase(package: package)
+        return RevenueCatPurchaseResult(
+            customerInfo: result.customerInfo,
+            userCancelled: result.userCancelled
+        )
+    }
+
+    func restorePurchases() async throws -> CustomerInfo {
+        try await Purchases.shared.restorePurchases()
+    }
+}
 
 @MainActor
 final class RevenueCatManager: NSObject, ObservableObject {
@@ -12,8 +77,13 @@ final class RevenueCatManager: NSObject, ObservableObject {
     @Published private(set) var isLoading: Bool = false
     @Published var lastErrorMessage: String?
 
+    private let purchasesClient: PurchasesClient
     private var started = false
     private var customerInfoTask: Task<Void, Never>?
+
+    init(purchasesClient: PurchasesClient = LivePurchasesClient()) {
+        self.purchasesClient = purchasesClient
+    }
 
     var hasMochiPro: Bool {
         customerInfo?.entitlements.active[Self.mochiProEntitlementID] != nil
@@ -27,13 +97,13 @@ final class RevenueCatManager: NSObject, ObservableObject {
         customerInfoTask?.cancel()
     }
 
-    static func configureSDKIfNeeded() {
+    static func configureSDKIfNeeded(purchasesClient: PurchasesClient = LivePurchasesClient()) {
         #if DEBUG
-        Purchases.logLevel = .debug
+        purchasesClient.setLogLevel(.debug)
         #endif
 
-        if !Purchases.isConfigured {
-            Purchases.configure(withAPIKey: Self.apiKey)
+        if !purchasesClient.isConfigured {
+            purchasesClient.configure(withAPIKey: Self.apiKey)
         }
     }
 
@@ -41,15 +111,14 @@ final class RevenueCatManager: NSObject, ObservableObject {
         guard !started else { return }
         started = true
 
-        Self.configureSDKIfNeeded()
-        Purchases.shared.delegate = self
+        Self.configureSDKIfNeeded(purchasesClient: purchasesClient)
 
         customerInfoTask = Task { [weak self] in
             guard let self else { return }
             await self.refreshCustomerInfo()
             await self.loadCurrentOffering()
 
-            for await info in Purchases.shared.customerInfoStream {
+            for await info in self.purchasesClient.customerInfoStream {
                 guard !Task.isCancelled else { return }
                 self.customerInfo = info
             }
@@ -58,7 +127,7 @@ final class RevenueCatManager: NSObject, ObservableObject {
 
     func refreshCustomerInfo() async {
         do {
-            customerInfo = try await Purchases.shared.customerInfo()
+            customerInfo = try await purchasesClient.customerInfo()
         } catch {
             handle(error, fallback: "Unable to refresh subscription status.")
         }
@@ -66,7 +135,7 @@ final class RevenueCatManager: NSObject, ObservableObject {
 
     func loadCurrentOffering() async {
         do {
-            let offerings = try await Purchases.shared.offerings()
+            let offerings = try await purchasesClient.offerings()
             currentOffering = offerings.current
             if currentOffering == nil {
                 lastErrorMessage = "No active offering is configured in RevenueCat."
@@ -81,7 +150,7 @@ final class RevenueCatManager: NSObject, ObservableObject {
         defer { isLoading = false }
 
         do {
-            let result = try await Purchases.shared.purchase(package: package)
+            let result = try await purchasesClient.purchase(package: package)
             customerInfo = result.customerInfo
 
             if result.userCancelled {
@@ -100,7 +169,7 @@ final class RevenueCatManager: NSObject, ObservableObject {
         defer { isLoading = false }
 
         do {
-            customerInfo = try await Purchases.shared.restorePurchases()
+            customerInfo = try await purchasesClient.restorePurchases()
         } catch {
             handle(error, fallback: "Restore failed. Please try again.")
         }
@@ -117,13 +186,5 @@ final class RevenueCatManager: NSObject, ObservableObject {
         }
         let localizedDescription = nsError.localizedDescription.trimmingCharacters(in: .whitespacesAndNewlines)
         lastErrorMessage = localizedDescription.isEmpty ? fallback : localizedDescription
-    }
-}
-
-extension RevenueCatManager: PurchasesDelegate {
-    nonisolated func purchases(_ purchases: Purchases, receivedUpdated customerInfo: CustomerInfo) {
-        Task { @MainActor in
-            self.customerInfo = customerInfo
-        }
     }
 }

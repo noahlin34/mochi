@@ -1,27 +1,66 @@
 import Foundation
 import UserNotifications
 
-enum NotificationManager {
-    static let dailyReminderIdentifier = "daily_habit_reminder"
+protocol NotificationCenterClient {
+    func authorizationStatus() async -> UNAuthorizationStatus
+    func requestAuthorization(options: UNAuthorizationOptions) async throws -> Bool
+    func add(_ request: UNNotificationRequest) async throws
+    func removePendingNotificationRequests(withIdentifiers identifiers: [String])
+}
 
-    static func authorizationStatus() async -> UNAuthorizationStatus {
-        let center = UNUserNotificationCenter.current()
+struct LiveNotificationCenterClient: NotificationCenterClient {
+    static let shared = LiveNotificationCenterClient()
+
+    private let center: UNUserNotificationCenter
+
+    init(center: UNUserNotificationCenter = .current()) {
+        self.center = center
+    }
+
+    func authorizationStatus() async -> UNAuthorizationStatus {
         let settings = await center.notificationSettings()
         return settings.authorizationStatus
     }
 
-    static func updateDailyReminder(enabled: Bool, hour: Int, minute: Int) async {
+    func requestAuthorization(options: UNAuthorizationOptions) async throws -> Bool {
+        try await center.requestAuthorization(options: options)
+    }
+
+    func add(_ request: UNNotificationRequest) async throws {
+        try await center.add(request)
+    }
+
+    func removePendingNotificationRequests(withIdentifiers identifiers: [String]) {
+        center.removePendingNotificationRequests(withIdentifiers: identifiers)
+    }
+}
+
+enum NotificationManager {
+    static let dailyReminderIdentifier = "daily_habit_reminder"
+
+    static func authorizationStatus(
+        center: NotificationCenterClient = LiveNotificationCenterClient.shared
+    ) async -> UNAuthorizationStatus {
+        await center.authorizationStatus()
+    }
+
+    static func updateDailyReminder(
+        enabled: Bool,
+        hour: Int,
+        minute: Int,
+        center: NotificationCenterClient = LiveNotificationCenterClient.shared
+    ) async {
         if enabled {
-            await scheduleDailyReminder(hour: hour, minute: minute)
+            await scheduleDailyReminder(hour: hour, minute: minute, center: center)
         } else {
-            await cancelDailyReminder()
+            await cancelDailyReminder(center: center)
         }
     }
 
-    static func requestAuthorizationIfNeeded() async -> Bool {
-        let center = UNUserNotificationCenter.current()
-        let settings = await center.notificationSettings()
-        switch settings.authorizationStatus {
+    static func requestAuthorizationIfNeeded(
+        center: NotificationCenterClient = LiveNotificationCenterClient.shared
+    ) async -> Bool {
+        switch await center.authorizationStatus() {
         case .authorized, .provisional, .ephemeral:
             return true
         case .denied:
@@ -37,9 +76,12 @@ enum NotificationManager {
         }
     }
 
-    static func scheduleDailyReminder(hour: Int, minute: Int) async {
-        let center = UNUserNotificationCenter.current()
-        await cancelDailyReminder()
+    static func scheduleDailyReminder(
+        hour: Int,
+        minute: Int,
+        center: NotificationCenterClient = LiveNotificationCenterClient.shared
+    ) async {
+        await cancelDailyReminder(center: center)
 
         var dateComponents = DateComponents()
         dateComponents.hour = hour
@@ -60,8 +102,9 @@ enum NotificationManager {
         try? await center.add(request)
     }
 
-    static func cancelDailyReminder() async {
-        let center = UNUserNotificationCenter.current()
+    static func cancelDailyReminder(
+        center: NotificationCenterClient = LiveNotificationCenterClient.shared
+    ) async {
         center.removePendingNotificationRequests(withIdentifiers: [dailyReminderIdentifier])
     }
 }

@@ -2,17 +2,46 @@ import Foundation
 import SwiftData
 import WidgetKit
 
+protocol HabitWidgetSnapshotStoring {
+    func save(_ snapshot: HabitWidgetSnapshot)
+}
+
+protocol WidgetTimelineReloading {
+    func reloadTimelines(ofKind kind: String)
+}
+
+struct LiveHabitWidgetSnapshotStore: HabitWidgetSnapshotStoring {
+    static let shared = LiveHabitWidgetSnapshotStore()
+
+    func save(_ snapshot: HabitWidgetSnapshot) {
+        HabitWidgetSnapshotStore.save(snapshot)
+    }
+}
+
+struct LiveWidgetTimelineReloader: WidgetTimelineReloading {
+    static let shared = LiveWidgetTimelineReloader()
+
+    func reloadTimelines(ofKind kind: String) {
+        WidgetCenter.shared.reloadTimelines(ofKind: kind)
+    }
+}
+
 @MainActor
 enum HabitWidgetSyncService {
     static let lockScreenWidgetKind = "habit_status_lockscreen"
     static let homeScreenWidgetKind = "habit_preview_homescreen"
 
-    static func sync(context: ModelContext) {
+    static func sync(
+        context: ModelContext,
+        now: () -> Date = Date.init,
+        store: HabitWidgetSnapshotStoring = LiveHabitWidgetSnapshotStore.shared,
+        reloader: WidgetTimelineReloading = LiveWidgetTimelineReloader.shared
+    ) {
         guard let appState = fetchSingle(AppState.self, context: context) else { return }
         let habits = fetchHabits(context: context)
 
         let snapshot = HabitWidgetSnapshot(
-            generatedAt: Date(),
+            generatedAt: now(),
             lastDailyReset: appState.lastDailyReset,
             lastWeeklyReset: appState.lastWeeklyReset,
             habits: habits.map { habit in
@@ -29,9 +58,9 @@ enum HabitWidgetSyncService {
             }
         )
 
-        HabitWidgetSnapshotStore.save(snapshot)
-        WidgetCenter.shared.reloadTimelines(ofKind: lockScreenWidgetKind)
-        WidgetCenter.shared.reloadTimelines(ofKind: homeScreenWidgetKind)
+        store.save(snapshot)
+        reloader.reloadTimelines(ofKind: lockScreenWidgetKind)
+        reloader.reloadTimelines(ofKind: homeScreenWidgetKind)
     }
 
     private static func fetchSingle<T: PersistentModel>(_ type: T.Type, context: ModelContext) -> T? {
