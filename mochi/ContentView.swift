@@ -18,6 +18,7 @@ struct ContentView: View {
     @AppStorage("reminderHour") private var reminderHour: Int = 9
     @AppStorage("reminderMinute") private var reminderMinute: Int = 0
 
+    private let isRunningTests = AppRuntime.isRunningTests
     private let engine = GameEngine()
     private let minimumSplashDuration: Duration = .milliseconds(1700)
 
@@ -45,6 +46,16 @@ struct ContentView: View {
         }
         .task {
             guard !hasFinishedBootstrap else { return }
+
+            if isRunningTests {
+                SeedDataService.seedIfNeeded(context: modelContext)
+                if let appState = (try? modelContext.fetch(FetchDescriptor<AppState>()))?.first {
+                    appState.tutorialSeen = true
+                }
+                hasFinishedBootstrap = true
+                return
+            }
+
             let clock = ContinuousClock()
             let start = clock.now
             SeedDataService.seedIfNeeded(context: modelContext)
@@ -64,6 +75,7 @@ struct ContentView: View {
             }
         }
         .onChange(of: scenePhase) { phase in
+            guard !isRunningTests else { return }
             guard phase == .active else { return }
             engine.runResetsIfNeeded(context: modelContext)
             HabitWidgetSyncService.sync(context: modelContext)
@@ -78,6 +90,7 @@ struct ContentView: View {
     }
 
     private var shouldShowSplash: Bool {
+        if isRunningTests { return !hasFinishedBootstrap }
         if !hasFinishedBootstrap { return true }
         return pets.first == nil || appStates.first == nil
     }
@@ -126,7 +139,7 @@ struct ContentView: View {
                 }
                 .fullScreenCover(
                     isPresented: Binding(
-                        get: { !appState.tutorialSeen },
+                        get: { !isRunningTests && !appState.tutorialSeen },
                         set: { newValue in
                             if !newValue {
                                 appState.tutorialSeen = true

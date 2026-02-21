@@ -9,7 +9,9 @@ struct MochiApp: App {
     init() {
         // Ensure the system tab bar never shows behind the custom one.
         UITabBar.appearance().isHidden = true
-        RevenueCatManager.configureSDKIfNeeded()
+        if !AppRuntime.isRunningTests {
+            RevenueCatManager.configureSDKIfNeeded()
+        }
     }
 
     var sharedModelContainer: ModelContainer = {
@@ -58,7 +60,9 @@ struct MochiApp: App {
             ContentView()
                 .environmentObject(revenueCat)
                 .task {
-                    revenueCat.start()
+                    if !AppRuntime.isRunningTests {
+                        revenueCat.start()
+                    }
                 }
                 .preferredColorScheme(.light)
         }
