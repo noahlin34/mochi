@@ -20,15 +20,12 @@ enum InventoryEquipService {
                 other.setEquipped(false, for: activeSpecies)
             }
         } else if item.type == .outfit {
-            if item.equipStyle == .replaceSprite {
-                for other in allItems where
-                    other.type == .outfit
-                        && other.equipStyle == .replaceSprite
-                        && other.isEquipped(for: activeSpecies)
-                        && other.outfitClass == item.outfitClass
-                        && other.id != item.id {
-                    other.setEquipped(false, for: activeSpecies)
-                }
+            for other in allItems where
+                other.type == .outfit
+                    && other.isEquipped(for: activeSpecies)
+                    && other.outfitClass == item.outfitClass
+                    && other.id != item.id {
+                other.setEquipped(false, for: activeSpecies)
             }
         }
 

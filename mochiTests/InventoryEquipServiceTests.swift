@@ -3,7 +3,7 @@ import XCTest
 
 final class InventoryEquipServiceTests: XCTestCase {
     @MainActor
-    func testApplyEquipStacksOverlayItemsInSameClassForActiveSpecies() {
+    func testApplyEquipUnequipsExistingSameClassItemForActiveSpecies() {
         let equippedHat = InventoryItem(
             type: .outfit,
             name: "Top Hat",
@@ -32,7 +32,7 @@ final class InventoryEquipServiceTests: XCTestCase {
         )
 
         XCTAssertTrue(changed)
-        XCTAssertTrue(equippedHat.isEquipped(for: .dog))
+        XCTAssertFalse(equippedHat.isEquipped(for: .dog))
         XCTAssertTrue(newHat.isEquipped(for: .dog))
     }
 
@@ -107,7 +107,7 @@ final class InventoryEquipServiceTests: XCTestCase {
     }
 
     @MainActor
-    func testApplyEquipDoesNotForceExclusivityAcrossEquipStyles() {
+    func testApplyEquipUsesClassExclusivityAcrossEquipStyles() {
         let spriteBody = InventoryItem(
             type: .outfit,
             name: "Bandana",
@@ -137,7 +137,7 @@ final class InventoryEquipServiceTests: XCTestCase {
         )
 
         XCTAssertTrue(changed)
-        XCTAssertTrue(spriteBody.isEquipped(for: .dog))
+        XCTAssertFalse(spriteBody.isEquipped(for: .dog))
         XCTAssertTrue(overlayBody.isEquipped(for: .dog))
     }
 
