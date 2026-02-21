@@ -4,6 +4,9 @@ import SwiftData
 
 enum SwiftDataTestSupport {
     @MainActor
+    private static var retainedContainers: [ModelContainer] = []
+
+    @MainActor
     static func makeInMemoryContext() throws -> ModelContext {
         let schema = Schema([
             Habit.self,
@@ -13,12 +16,17 @@ enum SwiftDataTestSupport {
         ])
         let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: configuration)
+        // Keep containers alive for the duration of the test process; ModelContext
+        // does not own the container and will crash if the container is deallocated.
+        retainedContainers.append(container)
         return container.mainContext
     }
 
     static func utcCalendar() -> Calendar {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? .current
+        calendar.firstWeekday = 2
+        calendar.minimumDaysInFirstWeek = 4
         return calendar
     }
 

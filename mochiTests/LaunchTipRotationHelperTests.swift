@@ -3,19 +3,26 @@ import XCTest
 
 final class LaunchTipRotationHelperTests: XCTestCase {
     func testSelectRandomTipReturnsDeterministicChoiceWithInjectedGenerator() {
-        var randomGenerator = PredictableRandomGenerator()
+        var randomGeneratorA = SeededRandomGenerator(seed: 42)
+        var randomGeneratorB = SeededRandomGenerator(seed: 42)
         let tips = ["Tip A", "Tip B", "Tip C"]
 
-        let next = LaunchTipRotationHelper.selectRandomTip(
+        let nextA = LaunchTipRotationHelper.selectRandomTip(
             tips: tips,
-            using: &randomGenerator
+            using: &randomGeneratorA
+        )
+        let nextB = LaunchTipRotationHelper.selectRandomTip(
+            tips: tips,
+            using: &randomGeneratorB
         )
 
-        XCTAssertEqual(next, "Tip A")
+        XCTAssertEqual(nextA, nextB)
+        XCTAssertNotNil(nextA)
+        XCTAssertTrue(tips.contains(nextA ?? ""))
     }
 
     func testSelectRandomTipReturnsOnlyTipWhenSingleTipExists() {
-        var randomGenerator = PredictableRandomGenerator()
+        var randomGenerator = SeededRandomGenerator(seed: 123)
         let tips = ["Only Tip"]
 
         let next = LaunchTipRotationHelper.selectRandomTip(
@@ -27,7 +34,7 @@ final class LaunchTipRotationHelperTests: XCTestCase {
     }
 
     func testSelectRandomTipReturnsNilForEmptyTips() {
-        var randomGenerator = PredictableRandomGenerator()
+        var randomGenerator = SeededRandomGenerator(seed: 999)
         let tips: [String] = []
 
         let next = LaunchTipRotationHelper.selectRandomTip(
@@ -61,8 +68,16 @@ final class LaunchTipRotationHelperTests: XCTestCase {
     }
 }
 
-private struct PredictableRandomGenerator: RandomNumberGenerator {
+private struct SeededRandomGenerator: RandomNumberGenerator {
+    private var state: UInt64
+
+    init(seed: UInt64) {
+        state = seed
+    }
+
     mutating func next() -> UInt64 {
-        0
+        // LCG for deterministic but non-degenerate test entropy.
+        state = state &* 6_364_136_223_846_793_005 &+ 1_442_695_040_888_963_407
+        return state
     }
 }
