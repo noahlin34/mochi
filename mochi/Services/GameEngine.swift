@@ -1,8 +1,7 @@
 import Foundation
 import SwiftData
 
-@MainActor
-final class GameEngine {
+nonisolated final class GameEngine {
     // Centralized rules for rewards and daily/weekly resets.
     struct Reward {
         let coins: Int
@@ -20,11 +19,13 @@ final class GameEngine {
     private let calendar: Calendar
     private let dateProvider: () -> Date
 
+    @MainActor
     init(calendar: Calendar = .current, dateProvider: @escaping () -> Date = Date.init) {
         self.calendar = calendar
         self.dateProvider = dateProvider
     }
 
+    @MainActor
     @discardableResult
     func completeHabit(_ habit: Habit, pet: Pet, appState: AppState? = nil) -> Bool {
         let now = dateProvider()
@@ -79,6 +80,7 @@ final class GameEngine {
     }
 
     // Applies daily decay and weekly counters based on calendar boundaries.
+    @MainActor
     func runResetsIfNeeded(appState: AppState, habits: [Habit], pet: Pet) {
         let now = dateProvider()
         let startOfToday = calendar.startOfDay(for: now)
@@ -120,6 +122,7 @@ final class GameEngine {
         }
     }
 
+    @MainActor
     func runResetsIfNeeded(context: ModelContext) {
         let appState = fetchSingle(AppState.self, context: context)
         let pet = fetchSingle(Pet.self, context: context)
@@ -129,16 +132,19 @@ final class GameEngine {
         runResetsIfNeeded(appState: appState, habits: habits, pet: pet)
     }
 
+    @MainActor
     private func fetchSingle<T: PersistentModel>(_ type: T.Type, context: ModelContext) -> T? {
         let descriptor = FetchDescriptor<T>()
         return (try? context.fetch(descriptor))?.first
     }
 
+    @MainActor
     private func fetchAll<T: PersistentModel>(_ type: T.Type, context: ModelContext) -> [T] {
         let descriptor = FetchDescriptor<T>()
         return (try? context.fetch(descriptor)) ?? []
     }
 
+    @MainActor
     private func applyReward(to pet: Pet) {
         let multiplier = coinMultiplier(for: pet)
         let coinsEarned = Int(Double(Self.habitReward.coins) * multiplier)
@@ -147,6 +153,7 @@ final class GameEngine {
         pet.level = GameLogic.levelForXP(pet.xp)
     }
 
+    @MainActor
     private func applyCompletionEffects(to pet: Pet, hunger: Bool, cleanliness: Bool) {
         pet.energy = GameLogic.clamp(pet.energy + Self.habitReward.energy)
         if hunger {
@@ -157,6 +164,7 @@ final class GameEngine {
         }
     }
 
+    @MainActor
     private func applyStreakBonusIfNeeded(appState: AppState?, pet: Pet, on date: Date) {
         guard let appState else { return }
         if let lastBonus = appState.lastStreakBonusDate,
@@ -170,6 +178,7 @@ final class GameEngine {
         appState.lastStreakBonusDate = date
     }
 
+    @MainActor
     private func coinMultiplier(for pet: Pet) -> Double {
         let wellness = (pet.energy + pet.hunger + pet.cleanliness) / 3
         switch wellness {
@@ -184,6 +193,7 @@ final class GameEngine {
         }
     }
 
+    @MainActor
     private func updateStreakIfNeeded(appState: AppState?, on date: Date) {
         guard let appState else { return }
         let startOfToday = calendar.startOfDay(for: date)
