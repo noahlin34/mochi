@@ -3,7 +3,7 @@ import XCTest
 
 final class InventoryEquipServiceTests: XCTestCase {
     @MainActor
-    func testApplyEquipUnequipsExistingSameClassItemForActiveSpecies() {
+    func testApplyEquipStacksOverlayItemsInSameClassForActiveSpecies() {
         let equippedHat = InventoryItem(
             type: .outfit,
             name: "Top Hat",
@@ -32,8 +32,44 @@ final class InventoryEquipServiceTests: XCTestCase {
         )
 
         XCTAssertTrue(changed)
-        XCTAssertFalse(equippedHat.isEquipped(for: .dog))
+        XCTAssertTrue(equippedHat.isEquipped(for: .dog))
         XCTAssertTrue(newHat.isEquipped(for: .dog))
+    }
+
+    @MainActor
+    func testApplyEquipUnequipsExistingReplaceSpriteItemInSameClass() {
+        let equippedBody = InventoryItem(
+            type: .outfit,
+            name: "Bandana",
+            price: 30,
+            owned: true,
+            equipped: true,
+            assetName: "bandana",
+            petSpecies: .dog,
+            equipStyle: .replaceSprite,
+            outfitClass: .body
+        )
+        let newBody = InventoryItem(
+            type: .outfit,
+            name: "Scarf",
+            price: 30,
+            owned: true,
+            equipped: false,
+            assetName: "scarf",
+            petSpecies: .dog,
+            equipStyle: .replaceSprite,
+            outfitClass: .body
+        )
+
+        let changed = InventoryEquipService.applyEquip(
+            for: newBody,
+            in: [equippedBody, newBody],
+            activeSpecies: .dog
+        )
+
+        XCTAssertTrue(changed)
+        XCTAssertFalse(equippedBody.isEquipped(for: .dog))
+        XCTAssertTrue(newBody.isEquipped(for: .dog))
     }
 
     @MainActor
@@ -71,7 +107,7 @@ final class InventoryEquipServiceTests: XCTestCase {
     }
 
     @MainActor
-    func testApplyEquipUsesClassExclusivityAcrossEquipStyles() {
+    func testApplyEquipDoesNotForceExclusivityAcrossEquipStyles() {
         let spriteBody = InventoryItem(
             type: .outfit,
             name: "Bandana",
@@ -101,7 +137,7 @@ final class InventoryEquipServiceTests: XCTestCase {
         )
 
         XCTAssertTrue(changed)
-        XCTAssertFalse(spriteBody.isEquipped(for: .dog))
+        XCTAssertTrue(spriteBody.isEquipped(for: .dog))
         XCTAssertTrue(overlayBody.isEquipped(for: .dog))
     }
 
