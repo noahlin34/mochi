@@ -182,7 +182,12 @@ final class RevenueCatManager: NSObject, ObservableObject {
 
     private func handle(_ error: Error, fallback: String) {
         let nsError = error as NSError
-        if let code = ErrorCode(rawValue: nsError.code), code == .purchaseCancelledError {
+        let isRevenueCatDomain = nsError.domain == ErrorCode.errorDomain
+            || nsError.domain == "RevenueCat"
+
+        if isRevenueCatDomain,
+           let code = ErrorCode(rawValue: nsError.code),
+           code == .purchaseCancelledError {
             return
         }
         let localizedDescription = nsError.localizedDescription.trimmingCharacters(in: .whitespacesAndNewlines)
