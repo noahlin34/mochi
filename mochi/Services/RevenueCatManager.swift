@@ -14,7 +14,7 @@ protocol PurchasesClient: AnyObject {
     func setLogLevel(_ level: LogLevel)
     func configure(withAPIKey apiKey: String)
     func customerInfo() async throws -> CustomerInfo
-    func offerings() async throws -> Offerings
+    func currentOffering() async throws -> Offering?
     func purchase(package: Package) async throws -> RevenueCatPurchaseResult
     func restorePurchases() async throws -> CustomerInfo
 }
@@ -50,8 +50,8 @@ final class LivePurchasesClient: PurchasesClient {
         try await Purchases.shared.customerInfo()
     }
 
-    func offerings() async throws -> Offerings {
-        try await Purchases.shared.offerings()
+    func currentOffering() async throws -> Offering? {
+        try await Purchases.shared.offerings().current
     }
 
     func purchase(package: Package) async throws -> RevenueCatPurchaseResult {
@@ -112,15 +112,17 @@ final class RevenueCatManager: NSObject, ObservableObject {
         started = true
 
         Self.configureSDKIfNeeded(purchasesClient: purchasesClient)
+        let stream = purchasesClient.customerInfoStream
 
         customerInfoTask = Task { [weak self] in
-            guard let self else { return }
-            await self.refreshCustomerInfo()
-            await self.loadCurrentOffering()
+            await self?.refreshCustomerInfo()
+            await self?.loadCurrentOffering()
 
-            for await info in self.purchasesClient.customerInfoStream {
+            for await info in stream {
                 guard !Task.isCancelled else { return }
-                self.customerInfo = info
+                await MainActor.run { [weak self] in
+                    self?.customerInfo = info
+                }
             }
         }
     }
@@ -135,8 +137,7 @@ final class RevenueCatManager: NSObject, ObservableObject {
 
     func loadCurrentOffering() async {
         do {
-            let offerings = try await purchasesClient.offerings()
-            currentOffering = offerings.current
+            currentOffering = try await purchasesClient.currentOffering()
             if currentOffering == nil {
                 lastErrorMessage = "No active offering is configured in RevenueCat."
             }
